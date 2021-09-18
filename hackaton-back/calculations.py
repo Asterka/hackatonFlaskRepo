@@ -1,7 +1,5 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 from numba import prange, njit
 
 # it is better to install numba with conda (for llvm support)
@@ -28,10 +26,10 @@ class Table:
         BaseClass.is_relevant = False  # BaseClass optimal_strategy_curve is not relevant anymore
 
     def add_row(self):
-        self.data = np.append(self.data, np.zeros(self.data.shape[0]), axis=0)
+        self.data = np.append(self.data, np.zeros(self.data.shape[0], dtype=self.data.dtype), axis=0)
 
     def add_column(self):
-        self.data = np.append(self.data, np.zeros(self.data.shape[1]), axis=1)
+        self.data = np.append(self.data, np.zeros(self.data.shape[1], dtype=self.data.dtype), axis=1)
 
 
 class RiskTable(Table):
@@ -346,17 +344,40 @@ class BaseClass(metaclass=Singleton):
         BaseClass.is_relevant = True
 
     @classmethod
-    def edit_risk_table(cls, new_value, x, y):
+    def edit_risk_table_element(cls, new_value, x, y):
         cls.risks_table.update_value(new_value, x, y)
 
     @classmethod
-    def edit_costs_table(cls, new_value, x, y):
+    def edit_costs_table_element(cls, new_value, x, y):
         cls.costs_table.update_value(new_value, x, y)
 
     @classmethod
-    def edit_reasons_table(cls, new_value, x, y):
+    def edit_reasons_table_element(cls, new_value, x, y):
         cls.reasons_table.update_value(new_value, x, y)
 
+    @classmethod
+    def add_row_to_risk(cls):
+        cls.risks_table.add_row()
+
+    @classmethod
+    def add_row_to_costs(cls):
+        cls.costs_table.add_row()
+
+    @classmethod
+    def add_row_to_reasons(cls):
+        cls.reasons_table.add_row()
+
+    @classmethod
+    def add_column_to_risk(cls):
+        cls.risks_table.add_column()
+
+    @classmethod
+    def add_column_to_costs(cls):
+        cls.costs_table.add_column()
+
+    @classmethod
+    def add_column_to_reasons(cls):
+        cls.reasons_table.add_column()
 
 if __name__ == "__main__":
     BaseClass.optimize_for_all_costs()
