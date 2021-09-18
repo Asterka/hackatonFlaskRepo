@@ -1,6 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from numba import prange, njit
+import json
+
 
 # it is better to install numba with conda (for llvm support)
 
@@ -12,6 +14,13 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 
 class Table:
@@ -30,6 +39,14 @@ class Table:
 
     def add_column(self):
         self.data = np.append(self.data, np.zeros(self.data.shape[1], dtype=self.data.dtype), axis=1)
+
+    def convert_numpy_to_json(self):
+        return json.dumps(self.data, cls=NumpyEncoder)
+
+    def read_from_json(self, json_data):
+        json_load = json.loads(json_data)
+        self.data = np.asarray(json_load)
+        return self.data
 
 
 class RiskTable(Table):
@@ -379,5 +396,10 @@ class BaseClass(metaclass=Singleton):
     def add_column_to_reasons(cls):
         cls.reasons_table.add_column()
 
+
 if __name__ == "__main__":
+    """json_f = BaseClass.risks_table.convert_numpy_to_json()
+    X = BaseClass.risks_table.data[:]
+    BaseClass.risks_table.read_from_json(json_f)
+    print(BaseClass.risks_table.data == X)"""
     BaseClass.optimize_for_all_costs()
