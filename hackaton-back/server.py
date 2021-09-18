@@ -1,22 +1,22 @@
 from flask import Flask, jsonify, render_template
 from flask_restful import Resource, Api, marshal_with
-from flask_socketio import SocketIO,emit,send
+from flask_socketio import SocketIO, emit, send
 from threading import Thread
 import time
- 
+from calculations import *
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
 thread = None
 clients = 0
- 
+
 
 def ini_socket():
     global clients, thread
     thread = None
- 
- 
+
+
 @app.route('/api/socket')
 def index():
     print('Route socket init')
@@ -25,38 +25,41 @@ def index():
         thread = Thread(target=ini_socket)
         thread.start()
     return ('{"ok":"success"}')
- 
- 
-#Function that runs when a clients get connected to the server
+
+
+# Function that runs when a clients get connected to the server
 @socketio.on('connect')
 def test_connect():
     global clients
     clients += 1
     print('Client connected test')
- 
- 
-#Read data from client
+
+
+# Read data from client
 @socketio.on('new-message')
 def handle_message(message):
     print('received message' + message)
     send_data()
- 
- 
-#Send data to client
+
+
+# Send data to client
 @socketio.on('new-message-s')
 def send_data():
-    emit('data-msg', {'message':'message'})
- 
- 
+    emit('data-msg', {'message': 'message'})
+
+
 @socketio.on('disconnect')
 def test_disconnect():
     global clients
     clients -= 1
     print('Client disconnected')
- 
- 
- 
- 
-#This is the function that will create the Server in the ip host and port 5000
+
+
+@app.route('/table1')
+def send_table_with_risks():
+    return BaseClass.risks_table.convert_numpy_to_json()
+
+
+# This is the function that will create the Server in the ip host and port 5000
 if __name__ == "__main__":
-    print("starting webservice");
+    print("starting webservice")
