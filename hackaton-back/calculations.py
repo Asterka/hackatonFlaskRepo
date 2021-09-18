@@ -3,11 +3,11 @@ from matplotlib import pyplot as plt
 from numba import prange, njit
 import json
 
-
 # it is better to install numba with conda (for llvm support)
 
 
 class Singleton(type):
+    # singleton for BaseClass
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -17,6 +17,7 @@ class Singleton(type):
 
 
 class NumpyEncoder(json.JSONEncoder):
+    # used to encode 2d and 3d numpy array to json format
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -24,42 +25,63 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 class Table:
-    # deferred class
+    """deferred class for all 3 tables:
+       risks (amount of damage and probability for each option),
+       costs (cost of each option)
+       reasoning (reason of each option)
+       Each of 3 tables has it's data for each risk_source and for each level of security (#levels = n_approaches)
+    """
     def __init__(self, n_risks_sources=12, n_approaches=5):
         self.data = np.empty(0)
         self.n_risks_sources = n_risks_sources
         self.n_approaches = n_approaches
 
     def update_value(self, new_val, x, y):
+        # updates value of the table element and updates is_relative flag
+        # to show that old calculations are incorrect now
         self.data[x, y] = new_val
-        BaseClass.is_relevant = False  # BaseClass optimal_strategy_curve is not relevant anymore
+        BaseClass.is_relevant = False
 
     def add_row(self):
-        self.data = np.append(self.data, np.zeros(self.data.shape[0], dtype=self.data.dtype), axis=0)
+        # adds a row to the table
+        if len(self.data.shape) == 2:
+            self.data = np.append(self.data, np.zeros((1, self.data.shape[1]), dtype=self.data.dtype), axis=0)
+        else:
+            self.data = np.append(self.data, np.zeros((1, self.data.shape[1], self.data.shape[2]), dtype=self.data.dtype), axis=0)
 
     def add_column(self):
-        self.data = np.append(self.data, np.zeros(self.data.shape[1], dtype=self.data.dtype), axis=1)
+        # adds column to the table
+        if len(self.data.shape) == 2:
+            self.data = np.append(self.data, np.zeros((self.data.shape[0], 1), dtype=self.data.dtype), axis=1)
+        else:
+            self.data = np.append(self.data, np.zeros((self.data.shape[0], 1, self.data.shape[2]), dtype=self.data.dtype), axis=1)
 
     def convert_numpy_to_json(self):
+        # converts a table to json format
         return json.dumps(self.data, cls=NumpyEncoder)
 
     def read_from_json(self, json_data):
+        # reconstruct a table from json format to numpy array
         json_load = json.loads(json_data)
         self.data = np.asarray(json_load)
         return self.data
 
 
 class RiskTable(Table):
-    def __init__(self, default=True, init_risks=None):
+    """
+        RiskTable is a Table (n_approaches x n_risk_sources x 2), explanation below
+    """
+    def __init__(self, given_init_risks=None):
         super(RiskTable, self).__init__()
-        if default:
-            # shape (5: for each security lvl approach including base approach, 12: for each risk_source, 2: damage & probability)
+        if not given_init_risks:
+            # default shape (5: for each security lvl approach including base approach, 12: for each risk_source, 2: damage & probability)
 
             # security lvl dimensions:
-            # 0: 1 ур. проработки
-            # 1: 2 ур. проработки
-            # 2: 3 ур. проработки
-            # 3: 4 ур. проработки
+            # 0: 0 ур. проработки
+            # 1: 1 ур. проработки
+            # 2: 2 ур. проработки
+            # 3: 3 ур. проработки
+            # 4: 4 ур. проработки
 
             # risk_source dimensions:
             # 0: Несоблюдение условий размещения и функционирования серверного и телекоммуникационного оборудования
@@ -155,13 +177,16 @@ class RiskTable(Table):
             self.data[4, 10] = [0, 1]
             self.data[4, 11] = [1, 0]
         else:
-            self.data = init_risks[:]
+            self.data = given_init_risks[:]
 
 
 class CostsTable(Table):
-    def __init__(self, default=True, init_costs=None):
+    """
+        CostsTable is a Table (n_approaches x n_risk_sources) for cost for each risk management option
+    """
+    def __init__(self, given_init_costs=None):
         super(CostsTable, self).__init__()
-        if default:
+        if not given_init_costs:
             self.data = np.empty((self.n_approaches, self.n_risks_sources))
             self.data[0] = np.zeros(self.n_risks_sources)
             self.data[1] = [2.5, 3, 3.5, 2., 1.5, 1., 2., 4., 5., 1., 1.5, 2.]
@@ -169,7 +194,7 @@ class CostsTable(Table):
             self.data[3] = [4.375, 5.25, 6.125, 3.5, 2.625, 1.75, 3.5, 7., 8.75, 1.75, 2.625, 3.5]
             self.data[4] = [7.875, 9.45, 11.025, 6.3, 4.725, 3.15, 6.3, 12.6, 15.75, 3.15, 4.725, 6.3]
         else:
-            self.data = init_costs[:]
+            self.data = given_init_costs[:]
 
 
 class Reasoning(Table):
@@ -201,20 +226,29 @@ class Reasoning(Table):
 
 
 class BaseClass(metaclass=Singleton):
-    risks_table = RiskTable()
-    costs_table = CostsTable()
-    reasons_table = Reasoning()
+    """
+       Base class, stores all the tables data and uses them for calculations, updates and optimal curve visualization
+    """
+    risks_table = RiskTable()  # risks_table: n_approaches x n_risk_sources x 2
+    costs_table = CostsTable()  # costs_table: n_approaches x n_risk_sources
+    reasons_table = Reasoning()  # reasons_table: n_approaches x n_risk_sources
+
     max_costs = None
     optimal_risks = None
     optimal_costs = None
     is_relevant = None
+    risk_cost = 2.
 
     @classmethod
-    def save_optimal_strategy_curve(cls, external=False):
+    def save_optimal_strategy_curve(cls):
+        """
+            Represents minimal risk for each available budget and optimal point for a given risk_cost field of the class
+        :return:  optimal budget that minimizes risk cost and risk management cost
+        """
         plt.plot(cls.max_costs, cls.optimal_risks)
 
         optimal_point = np.argmin(
-            2 * cls.optimal_risks + cls.optimal_costs)  # consider cost of data as twice cost of the solution
+            cls.risk_cost * cls.optimal_risks + cls.optimal_costs)  # consider cost of data as twice cost of the solution
         plt.scatter(cls.max_costs[optimal_point], cls.optimal_risks[optimal_point], color='g')
         plt.gca().set_ylim(top=100, bottom=0)
         # plt.show()
@@ -225,7 +259,15 @@ class BaseClass(metaclass=Singleton):
 
     @classmethod
     def optimize_for_all_costs(cls, costs_list=None, n_steps=None):
-
+        """
+        Calculates minimal risk for each available budget and optimal point for a given risk_cost field of the class
+        Solution is simply brute force (that can be optimized by going through each combination just once, not for each
+        cost: that was done for simple parallelization with numba, numba can be replaced with another lib with
+        an opportunity to explicitly change number of workers to optimize this way)
+        :param costs_list: list of costs (by default: all possible costs)
+        :param n_steps: number of steps for optimization (by default as many steps as there are costs_list elements)
+        :return:
+        """
         assert cls.risks_table.data.shape[:-1] == cls.costs_table.data.shape, f"Shape doesn't match: risks " \
                                                                               f"{cls.risks_table.data.shape[:-1]} != " \
                                                                               f"{cls.costs_table.data.shape}"
@@ -263,7 +305,7 @@ class BaseClass(metaclass=Singleton):
             :param risk_strategy: 12 different risk sources (each has value from 0 to 4 according to level of security)
             :param max_curr_cost: max cost that this strategy can have (if it is more expensive strategy will not be considered)
             :param opt_strategy_score: optimal found strategy risk, more risky strategy will not be considered
-            :return:
+            :return: nothing, just creates an image with plot of the solution
             """
             cost = 0
             curr_risk = 0
@@ -276,6 +318,10 @@ class BaseClass(metaclass=Singleton):
 
         @njit
         def base_repr(x, base, digits_n):
+            # converts x from base 10 to base "base"
+            # returns np.array of digits of length digits_n
+            # used to encode all states of the brute force
+            # unfortunately np.ndindex does not work with parallel prange in numba, so here is the alternative :)
             max_deg = 0
             next_digit = 1
             while x // next_digit > 0:
@@ -295,6 +341,7 @@ class BaseClass(metaclass=Singleton):
 
         @njit
         def calc_opt_strategy_score_fixed_cost(max_curr_cost, options):
+            # calculates best strategy and it's cost by a given max_curr_cost budget limitation
             inf = 2147483647
             opt_strategy_score = inf
             opt_strategy_cost = inf
@@ -318,19 +365,21 @@ class BaseClass(metaclass=Singleton):
             # solution is implemented in a brute force fashion
             optimal_risks_ = np.empty_like(max_costs)
             optimal_costs_ = np.empty_like(max_costs)
-            # this loop can be eliminated: all the optimal strategies should be found in a one look
             options = n_approaches**n_risk_sources  # all possible strategies
             for index in prange(max_costs.shape[0]):
+                # this loop can be eliminated: all the optimal strategies should be found in a one look
+                # but then either no parallel computing or no numba prange feature can be used sadly
                 optimal_risks_[index], optimal_costs_[index] = calc_opt_strategy_score_fixed_cost(max_costs[index], options)
                 # we can say it equals max_curr_cost, but we should have a fair calculation :)
             return optimal_risks_, optimal_costs_
 
         @njit
         def calc_opt_rs(max_curr_cost=45.0, n_risk_sources=n_risks_sources, n_approaches=n_approaches):
+            # calculates optimal strategy for a given max_curr_cost
+            # no parallel execution due to conflict with the shared variables best_rs, opt_strategy
             inf = 2147483647
             opt_strategy_score = inf
             best_rs = np.arange(n_risks_sources)
-            # as soon as no parallel execution is possible due to conflict with the shared variables best_rs, opt_strategy
             options = n_approaches ** n_risk_sources  # all possible strategies
             for risk_strategy_base10 in range(options):
                 risk_strategy = base_repr(risk_strategy_base10, n_approaches)
@@ -354,11 +403,12 @@ class BaseClass(metaclass=Singleton):
             optimal_point = BaseClass.save_optimal_strategy_curve()
             return optimal_point, max_costs[optimal_point], optimal_risks[optimal_point]
 
-        _ = global_run()
+        _, optimal_budget, optimal_risk = global_run()
         # print(f"the best risk management strategy with cost(risk)/cost(rubbles for risk management) ~ 2 costs \
         #             {optimal_cost__}, leads to average risk = {optimal_risk} and can be achieved by the strategy: "
         #       f"{calc_opt_rs(max_curr_cost=optimal_cost__)}")
         BaseClass.is_relevant = True
+        # return best_strategy = calc_opt_rs(max_curr_cost=optimal_budget)
 
     @classmethod
     def edit_risk_table_element(cls, new_value, x, y):
@@ -373,28 +423,24 @@ class BaseClass(metaclass=Singleton):
         cls.reasons_table.update_value(new_value, x, y)
 
     @classmethod
-    def add_row_to_risk(cls):
+    def add_approach(cls):
         cls.risks_table.add_row()
-
-    @classmethod
-    def add_row_to_costs(cls):
         cls.costs_table.add_row()
-
-    @classmethod
-    def add_row_to_reasons(cls):
         cls.reasons_table.add_row()
+        cls.risks_table.n_approaches += 1
+        cls.costs_table.n_approaches += 1
+        cls.reasons_table.n_approaches += 1
+        cls.is_relevant = False
 
     @classmethod
-    def add_column_to_risk(cls):
+    def add_risk_source(cls):
         cls.risks_table.add_column()
-
-    @classmethod
-    def add_column_to_costs(cls):
         cls.costs_table.add_column()
-
-    @classmethod
-    def add_column_to_reasons(cls):
         cls.reasons_table.add_column()
+        cls.risks_table.n_risks_sources += 1
+        cls.costs_table.n_risks_sources += 1
+        cls.reasons_table.n_risks_sources += 1
+        cls.is_relevant = False
 
 
 if __name__ == "__main__":
