@@ -1,8 +1,19 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 from numba import prange, njit
 
 # it is better to install numba with conda (for llvm support)
+
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 class Table:
@@ -13,7 +24,7 @@ class Table:
         self.n_approaches = n_approaches
 
     def update_value(self, new_val, x, y):
-        self.data[x, y] = [new_val[0], new_val[1]]
+        self.data[x, y] = new_val
         BaseClass.is_relevant = False  # BaseClass optimal_strategy_curve is not relevant anymore
 
     def add_row(self):
@@ -146,16 +157,45 @@ class CostsTable(Table):
             self.data = init_costs[:]
 
 
-class BaseClass:
+class Reasoning(Table):
+    def __init__(self, default=True, init_reasoning=None):
+        super(Reasoning, self).__init__()
+        if default and not init_reasoning:
+            self.data = np.empty((self.n_approaches, self.n_risks_sources), dtype=str)
+
+            self.data[0] = ["11", "12", "13", "14",
+                            "15", "16", "17", "18",
+                            "19", "1_10", "1_11", "1_12"]
+            self.data[1] = ["21", "22", "23", "24",
+                            "25", "26", "27", "28",
+                            "29", "2_10", "2_11", "2_12"]
+            self.data[2] = ["31", "32", "33", "34",
+                            "35", "36", "37", "38",
+                            "39", "3_10", "3_11", "3_12"]
+            self.data[3] = ["41", "42", "43", "44",
+                            "45", "146", "47", "48",
+                            "49", "4_10", "4_11", "4_12"]
+            self.data[4] = ["51", "52", "53", "54",
+                            "55", "56", "57", "58",
+                            "59", "5_10", "5_11", "5_12"]
+
+        elif not init_reasoning:
+            self.data = np.empty((self.n_approaches, self.n_risks_sources), dtype=str)
+        else:
+            self.data = np.array(init_reasoning, dtype=str)
+
+
+class BaseClass(metaclass=Singleton):
     risks_table = RiskTable()
     costs_table = CostsTable()
+    reasons_table = Reasoning()
     max_costs = None
     optimal_risks = None
     optimal_costs = None
     is_relevant = None
 
     @classmethod
-    def save_optimal_strategy_curve(cls):
+    def save_optimal_strategy_curve(cls, external=False):
         plt.plot(cls.max_costs, cls.optimal_risks)
 
         optimal_point = np.argmin(
@@ -163,12 +203,17 @@ class BaseClass:
         plt.scatter(cls.max_costs[optimal_point], cls.optimal_risks[optimal_point], color='g')
         plt.gca().set_ylim(top=100, bottom=0)
         # plt.show()
+        plt.xlabel('Стоимость баз. ед.')
+        plt.ylabel('Риск в ед. риска')
         plt.savefig('optimal_strategy_curve.png')
         return optimal_point
 
     @classmethod
     def optimize_for_all_costs(cls, costs_list=None, n_steps=None):
 
+        assert cls.risks_table.data.shape[:-1] == cls.costs_table.data.shape, f"Shape doesn't match: risks " \
+                                                                              f"{cls.risks_table.data.shape[:-1]} != " \
+                                                                              f"{cls.costs_table.data.shape}"
         if not costs_list or not n_steps:
             if not cls.max_costs is None and not cls.optimal_risks is None and not cls.optimal_costs is None:
                 cls.save_optimal_strategy_curve()
@@ -299,6 +344,18 @@ class BaseClass:
         #             {optimal_cost__}, leads to average risk = {optimal_risk} and can be achieved by the strategy: "
         #       f"{calc_opt_rs(max_curr_cost=optimal_cost__)}")
         BaseClass.is_relevant = True
+
+    @classmethod
+    def edit_risk_table(cls, new_value, x, y):
+        cls.risks_table.update_value(new_value, x, y)
+
+    @classmethod
+    def edit_costs_table(cls, new_value, x, y):
+        cls.costs_table.update_value(new_value, x, y)
+
+    @classmethod
+    def edit_reasons_table(cls, new_value, x, y):
+        cls.reasons_table.update_value(new_value, x, y)
 
 
 if __name__ == "__main__":
