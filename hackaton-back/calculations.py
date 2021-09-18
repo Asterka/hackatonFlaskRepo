@@ -14,7 +14,7 @@ class Table:
 
     def update_value(self, new_val, x, y):
         self.data[x, y] = [new_val[0], new_val[1]]
-        Data.is_relevant = False  # Data optimal_strategy_curve is not relevant anymore
+        BaseClass.is_relevant = False  # BaseClass optimal_strategy_curve is not relevant anymore
 
     def add_row(self):
         self.data = np.append(self.data, np.zeros(self.data.shape[0]), axis=0)
@@ -146,7 +146,7 @@ class CostsTable(Table):
             self.data = init_costs[:]
 
 
-class Data:
+class BaseClass:
     risks_table = RiskTable()
     costs_table = CostsTable()
     max_costs = None
@@ -189,10 +189,10 @@ class Data:
         else:
             max_costs = sorted(list(costs_list)[:])
 
-        costs = Data.costs_table.data[:]
-        risks = Data.risks_table.data[:]
-        n_risks_sources = Data.costs_table.n_risks_sources
-        n_approaches = Data.costs_table.n_approaches
+        costs = BaseClass.costs_table.data[:]
+        risks = BaseClass.risks_table.data[:]
+        n_risks_sources = BaseClass.costs_table.n_risks_sources
+        n_approaches = BaseClass.costs_table.n_approaches
         # print(f'Number of steps: {n_steps}')
 
         @njit
@@ -288,18 +288,18 @@ class Data:
             # finding optimal data, strategies and optimal point
             # but not optimal strategy, because it violates rule of shared memory for multiprocessing with numba
             optimal_risks, optimal_costs = calc_opt_strategy_score()
-            Data.optimal_risks = optimal_risks
-            Data.optimal_costs = optimal_costs
-            Data.max_costs = max_costs
-            optimal_point = Data.save_optimal_strategy_curve()
+            BaseClass.optimal_risks = optimal_risks
+            BaseClass.optimal_costs = optimal_costs
+            BaseClass.max_costs = max_costs
+            optimal_point = BaseClass.save_optimal_strategy_curve()
             return optimal_point, max_costs[optimal_point], optimal_risks[optimal_point]
 
         _ = global_run()
         # print(f"the best risk management strategy with cost(risk)/cost(rubbles for risk management) ~ 2 costs \
         #             {optimal_cost__}, leads to average risk = {optimal_risk} and can be achieved by the strategy: "
         #       f"{calc_opt_rs(max_curr_cost=optimal_cost__)}")
-        Data.is_relevant = True
+        BaseClass.is_relevant = True
 
 
 if __name__ == "__main__":
-    Data.optimize_for_all_costs()
+    BaseClass.optimize_for_all_costs()
