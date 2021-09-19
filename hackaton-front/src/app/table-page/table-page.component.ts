@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { CellEditor } from 'primeng/table';
+import { TableDataService } from '../table-data.service';
 
 @Component({
   selector: 'app-table-page',
@@ -9,10 +10,12 @@ import { CellEditor } from 'primeng/table';
 })
 export class TablePageComponent implements OnInit {
 
-  constructor(private messageService: MessageService) { }
+  constructor(private messageService: MessageService, private tableDataSerivce: TableDataService) { }
 
   ngOnInit() {
-
+    this.tableDataSerivce.requestTableData().then((data)=>{
+      this.messageService.add({'severity':'info', detail:'data loaded'});
+    })
   }
 
   onRowEditInit() {

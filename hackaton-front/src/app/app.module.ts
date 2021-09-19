@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule} from 'primeng/table';
-import { ToastModule } from "primeng/toast";
+import { Toast, ToastModule } from "primeng/toast";
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TablePageComponent } from './table-page/table-page.component';
@@ -15,7 +15,9 @@ import {MultiSelectModule} from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { TableDataService } from './table-data.service';
+import { MessageService } from 'primeng/api';
 
 @NgModule({
   declarations: [
@@ -36,9 +38,11 @@ import { RouterModule } from '@angular/router';
     InputTextModule,
     HttpClientModule,
     FormsModule,
-    RouterModule
+    RouterModule,
+    AppRoutingModule,
+    ToastModule,
   ],
-  providers: [],
+  providers: [TableDataService, MessageService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

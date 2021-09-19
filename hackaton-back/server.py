@@ -62,7 +62,6 @@ def send_table_with_risks():
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
-
 @app.route('/table2')
 def send_table_with_risks():
     response = jsonify(BaseClass.costs_table.convert_numpy_to_json())
