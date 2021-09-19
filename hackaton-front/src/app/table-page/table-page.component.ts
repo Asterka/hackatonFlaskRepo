@@ -14,7 +14,7 @@ export class TablePageComponent implements OnInit {
 
   ngOnInit() {
     this.tableDataSerivce.requestTableData().then((data)=>{
-      console.log(data)
+      this.messageService.add({'severity':'info', detail:'data loaded'});
     })
   }
 

@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule} from 'primeng/table';
-import { ToastModule } from "primeng/toast";
+import { Toast, ToastModule } from "primeng/toast";
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TablePageComponent } from './table-page/table-page.component';
@@ -39,7 +39,8 @@ import { MessageService } from 'primeng/api';
     HttpClientModule,
     FormsModule,
     RouterModule,
-    AppRoutingModule
+    AppRoutingModule,
+    ToastModule,
   ],
   providers: [TableDataService, MessageService],
   bootstrap: [AppComponent]
