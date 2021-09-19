@@ -5,6 +5,7 @@ from threading import Thread
 import time
 from calculations import *
 
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -58,6 +59,19 @@ def test_disconnect():
 @app.route('/table1')
 def send_table_with_risks():
     response = jsonify(BaseClass.risks_table.convert_numpy_to_json())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+
+@app.route('/table2')
+def send_table_with_risks():
+    response = jsonify(BaseClass.costs_table.convert_numpy_to_json())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+
+
+@app.route('/table3')
+def send_table_with_risks():
+    response = jsonify(BaseClass.reasons_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
