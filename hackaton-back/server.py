@@ -63,6 +63,20 @@ def send_table_with_risks():
     return response
 
 
+@app.route('/table2')
+def send_table_with_risks():
+    response = jsonify(BaseClass.costs_table.convert_numpy_to_json())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+
+
+@app.route('/table3')
+def send_table_with_risks():
+    response = jsonify(BaseClass.reasons_table.convert_numpy_to_json())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+
+
 # This is the function that will create the Server in the ip host and port 5000
 if __name__ == "__main__":
     print("starting webservice")
