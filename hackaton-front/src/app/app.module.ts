@@ -15,7 +15,9 @@ import {MultiSelectModule} from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { TableDataService } from './table-data.service';
+import { MessageService } from 'primeng/api';
 
 @NgModule({
   declarations: [
@@ -36,9 +38,10 @@ import { RouterModule } from '@angular/router';
     InputTextModule,
     HttpClientModule,
     FormsModule,
-    RouterModule
+    RouterModule,
+    AppRoutingModule
   ],
-  providers: [],
+  providers: [TableDataService, MessageService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

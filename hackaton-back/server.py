@@ -57,9 +57,12 @@ def test_disconnect():
 
 @app.route('/table1')
 def send_table_with_risks():
-    return BaseClass.risks_table.convert_numpy_to_json()
+    response = jsonify(BaseClass.risks_table.convert_numpy_to_json())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
 
 # This is the function that will create the Server in the ip host and port 5000
 if __name__ == "__main__":
     print("starting webservice")
+    app.run()
