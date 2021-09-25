@@ -63,6 +63,24 @@ class Table:
         else:
             self.data = np.append(self.data, np.zeros((self.data.shape[0], 1, self.data.shape[2]), dtype=self.data.dtype), axis=1)
 
+    def delete_row(self, row_n=-1):
+        if row_n >= self.data.shape[0]:
+            # error
+            pass
+        elif row_n != -1:
+            self.data = self.data[[i for i in range(self.data.shape[0]) if i != row_n]]
+        else:
+            self.data = self.data[:-1]
+
+    def delete_column(self, column_n=-1):
+        if column_n >= self.data.shape[1]:
+            # error
+            pass
+        elif column_n != -1:
+            self.data = self.data[:, [i for i in range(self.data.shape[1]) if i != column_n]]
+        else:
+            self.data = self.data[:, :-1]
+
     def convert_numpy_to_json(self):
         # converts a table to json format
         return json.dumps(self.data, cls=NumpyEncoder)
@@ -191,6 +209,7 @@ class CostsTable(Table):
     """
         CostsTable is a Table (n_approaches x n_risk_sources) for cost for each risk management option
     """
+
     def __init__(self, given_init_costs=None):
         super(CostsTable, self).__init__()
         if not given_init_costs:
@@ -269,7 +288,7 @@ class BaseClass(metaclass=Singleton):
         # plt.show()
         plt.xlabel('Стоимость баз. ед.')
         plt.ylabel('Риск в ед. риска')
-        plt.savefig('optimal_strategy_curve.png')
+        # plt.savefig('optimal_strategy_curve.png')
         return optimal_point
 
     @classmethod
@@ -279,6 +298,10 @@ class BaseClass(metaclass=Singleton):
         Solution is simply brute force (that can be optimized by going through each combination just once, not for each
         cost: that was done for simple parallelization with numba, numba can be replaced with another lib with
         an opportunity to explicitly change number of workers to optimize this way)
+
+        As soon as it is MVP we didn't consider smart update of the calculations after updating values: all calculations
+        repeats to update the relevant solution
+
         :param costs_list: list of costs (by default: all possible costs)
         :param n_steps: number of steps for optimization (by default as many steps as there are costs_list elements)
         :return:
@@ -460,10 +483,36 @@ class BaseClass(metaclass=Singleton):
         cls.reasons_table.risks_names += ['']
         cls.is_relevant = False
 
+    @classmethod
+    def remove_approach(cls, i=-1):
+        cls.risks_table.delete_row(i)
+        cls.costs_table.delete_row(i)
+        cls.reasons_table.delete_row(i)
+        cls.risks_table.n_approaches -= 1
+        cls.costs_table.n_approaches -= 1
+        cls.reasons_table.n_approaches -= 1
+        cls.is_relevant = False
+
+    @classmethod
+    def remove_risk_source(cls, i=-1):
+        cls.risks_table.delete_column(i)
+        cls.costs_table.delete_column(i)
+        cls.reasons_table.delete_column(i)
+        cls.risks_table.n_risks_sources -= 1
+        cls.costs_table.n_risks_sources -= 1
+        cls.reasons_table.n_risks_sources -= 1
+        cls.is_relevant = False
+
 
 if __name__ == "__main__":
-    """json_f = BaseClass.risks_table.convert_numpy_to_json()
-    X = BaseClass.risks_table.data[:]
-    BaseClass.risks_table.read_from_json(json_f)
-    print(BaseClass.risks_table.data == X)"""
+    # 12 risks
+    # 5 levels
+
     BaseClass.optimize_for_all_costs()
+    # BaseClass.remove_risk_source()
+    # BaseClass.remove_risk_source(3)
+    # BaseClass.remove_approach()
+    # BaseClass.remove_approach(2)
+    # BaseClass.add_risk_source()
+    # BaseClass.add_approach()
+    print('finished')
