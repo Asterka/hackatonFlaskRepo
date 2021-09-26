@@ -2,10 +2,10 @@
 import json
 import numpy as np
 from matplotlib import pyplot as plt
-from numba import prange, njit
+from numba import njit  # it is better to install numba with conda (for llvm support)
+import numba
+from multiprocessing import Pool, cpu_count as cores_number
 
-
-# it is better to install numba with conda (for llvm support)
 
 # dicts for pretty table instead of raw numbers at front
 dmg_lvls_decoding = {'0': 'Несущественные последствия',
@@ -25,6 +25,8 @@ probability_inversed = {discription: number for number, discription in probabili
 
 class Singleton(type):
     # singleton for a BaseClass
+    # actually no instances of the BaseClass are created
+    # but for the future purposes it might be useful
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -375,6 +377,100 @@ class Reasoning(Table):
             self.data = np.array(init_reasoning, dtype=str)
 
 
+@njit
+def binsearch(budgets, current_price):
+    """
+    Right binary search, assuming a is sorted in ascending order.
+    Used to get the closest available budget for the solution with price current_price from the budgets list budgets.
+    :param budgets: list of budgets available for choice
+    :param current_price: current price
+    :return: The lowest budget in which solution with current_price can fit
+    """
+    lo = 0
+    hi = len(budgets)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if budgets[mid] < current_price:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
+
+
+@njit
+def base_repr(x, base, digits_n):
+    """
+    Converts x from base 10 to base "base", this method is used to encode all states of the brute force.
+    For several reasons it is more convenient then np.ndindex in this case.
+    Actually the result is reversed but it doesn't matter because still each combination is presented by a unique number.
+    You can change it if you want :)
+
+    :param x: number to convert to base "base"
+    :param base: the target base
+    :param digits_n: fixed number of digits, pad with 0s if necessary
+    :return: np.array of digits of length digits_n
+    """
+
+    max_deg = 0
+    next_digit = 1
+    while x // next_digit > 0:
+        max_deg += 1
+        next_digit *= base
+
+    if x == 0:
+        return np.zeros(digits_n, dtype='i4')
+
+    digits = np.zeros(digits_n, dtype='i4')
+    m = next_digit // base
+    for digit in range(max_deg):
+        d = x // m
+        digits[max_deg - digit - 1] = d
+        x = x - d * m
+        m /= base
+    return digits
+
+
+def search_for_batch_best_solution(max_costs_copy, batch, local_max_costs_shape,
+                                   increment_local,
+                                   n_risks_sources_local, n_approaches_local, costs_l, risks_l):
+    inf_local = 2147483647
+    thread_optimal_risks_local = np.full(local_max_costs_shape, fill_value=inf_local)
+    thread_optimal_costs_local = np.full(local_max_costs_shape, fill_value=inf_local)
+    thread_best_strategy_local = np.full(shape=(local_max_costs_shape, n_risks_sources_local),
+                                         fill_value=-1)
+    for risk_strategy_base10 in range(batch - increment_local, batch):
+        risk_strategy_local = base_repr(risk_strategy_base10, n_approaches_local, n_risks_sources_local)
+
+        cost_local = 0
+        curr_risk_local = 0
+        for i in range(risk_strategy_local.shape[0]):
+            cost_local += costs_l[risk_strategy_local[i], i]
+            curr_risk_local += risks_l[risk_strategy_local[i], i, 0] * risks_l[risk_strategy_local[i], i, 1]
+
+        ind_local = binsearch(max_costs_copy, cost_local)
+        if curr_risk_local < thread_optimal_risks_local[ind_local]:
+            thread_optimal_risks_local[ind_local] = curr_risk_local
+            thread_optimal_costs_local[ind_local] = cost_local
+            thread_best_strategy_local[ind_local] = risk_strategy_local
+
+    fill_index = 0
+    best_strat = np.empty(n_risks_sources_local)
+    best_risk = inf_local
+    best_cost = inf_local
+    while fill_index < local_max_costs_shape:
+        if thread_optimal_risks_local[fill_index] < best_risk:
+            best_risk = thread_optimal_risks_local[fill_index]
+            best_cost = thread_optimal_costs_local[fill_index]
+            best_strat = thread_best_strategy_local[fill_index]
+        else:
+            thread_optimal_risks_local[fill_index] = best_risk
+            thread_optimal_costs_local[fill_index] = best_cost
+            thread_best_strategy_local[fill_index] = best_strat
+        fill_index += 1
+
+    return thread_optimal_risks_local, thread_optimal_costs_local, thread_best_strategy_local
+
+
 class BaseClass(metaclass=Singleton):
     """
        Base class, stores all the tables data and uses them for calculations, updates and optimal curve visualization
@@ -383,11 +479,14 @@ class BaseClass(metaclass=Singleton):
     costs_table = CostsTable()  # costs_table: n_approaches x n_risk_sources
     reasons_table = Reasoning()  # reasons_table: n_approaches x n_risk_sources
 
-    max_costs = None
-    optimal_risks = None
-    optimal_costs = None
-    is_relevant = None
-    risk_cost = 2.
+    max_costs = None  # different budget plans which are considered for optimization, sorted is the ascending order
+    optimal_risks = None  # risks of the optimal strategies for all budget plans
+    optimal_costs = None  # costs of the optimal strategies for all budget plans
+    optimal_strategies = None  # the optimal strategies for all budget plans
+    # (the best set of levels of approaches for each risk)
+    is_relevant = None  # flag to identify if calculations are relevant (changes when the table is edited)
+    risk_cost = 2.  # coefficient of the expensiveness of risk damage cost compared to risk management investments
+    steps_for_calc = 100  # number of different budget plans (evenly spaced from the cheapest to the most expensive)
 
     @classmethod
     def save_optimal_strategy_curve(cls):
@@ -404,11 +503,11 @@ class BaseClass(metaclass=Singleton):
         # plt.show()
         plt.xlabel('Стоимость баз. ед.')
         plt.ylabel('Риск в ед. риска')
-        # plt.savefig('optimal_strategy_curve.png')
+        plt.savefig('optimal_strategy_curve.png')
         return optimal_point
 
     @classmethod
-    def optimize_for_all_costs(cls, costs_list=None, n_steps=None):
+    def optimize_for_all_costs(cls, costs_list=None, n_steps=None, multiprocessing_mode=True):
         """
         Calculates minimal risk for each available budget and optimal point for a given risk_cost field of the class
         Solution is simply brute force (that can be optimized by going through each combination just once, not for each
@@ -418,8 +517,11 @@ class BaseClass(metaclass=Singleton):
         As soon as it is MVP we didn't consider smart update of the calculations after updating values: all calculations
         repeats to update the relevant solution
 
-        :param costs_list: list of costs (by default: all possible costs)
+        :param costs_list: list of costs,
+               by default: costs from min cost to max cost evenly spaced with steps_for_calc steps,
+               if steps_for_calc = -1 then we use the minimum step
         :param n_steps: number of steps for optimization (by default as many steps as there are costs_list elements)
+        :param multiprocessing_mode: if True then run parallel optimization else optimized single-core
         :return:
         """
         assert cls.risks_table.data.shape[:-1] == cls.costs_table.data.shape, f"Shape doesn't match: risks " \
@@ -439,26 +541,30 @@ class BaseClass(metaclass=Singleton):
                 if 0 < cur_step < min_step:
                     min_step = cur_step
 
-            n_steps = int((max_theoretical_cost - min_theoretical_cost) / min_step) + 1
+            if cls.steps_for_calc == -1:
+                n_steps = int((max_theoretical_cost - min_theoretical_cost) / min_step) + 1
+            else:
+                n_steps = cls.steps_for_calc
             max_costs = np.linspace(min_theoretical_cost, max_theoretical_cost, n_steps)
 
         else:
             max_costs = sorted(list(costs_list)[:])
 
+        # initializing global variables for all functions below (numba can't access classes fields)
         costs = BaseClass.costs_table.data[:]
         risks = BaseClass.risks_table.data[:]
         n_risks_sources = BaseClass.costs_table.n_risks_sources
         n_approaches = BaseClass.costs_table.n_approaches
+        # print('max_costs: \n', max_costs)
 
         @njit
         def calc_cost_and_risk(risk_strategy, max_curr_cost=2147483647., opt_strategy_score=2147483647.):
-            # calculates cost and risk of the single strategy
             """
-
+            calculates cost and risk of the single strategy
             :param risk_strategy: 12 different risk sources (each has value from 0 to 4 according to level of security)
             :param max_curr_cost: max cost that this strategy can have (if it is more expensive strategy will not be considered)
             :param opt_strategy_score: optimal found strategy risk, more risky strategy will not be considered
-            :return: nothing, just creates an image with plot of the solution
+            :return:
             """
             cost = 0
             curr_risk = 0
@@ -470,98 +576,149 @@ class BaseClass(metaclass=Singleton):
             return cost, curr_risk
 
         @njit
-        def base_repr(x, base, digits_n):
-            # converts x from base 10 to base "base"
-            # returns np.array of digits of length digits_n
-            # used to encode all states of the brute force
-            # unfortunately np.ndindex does not work with parallel prange in numba, so here is the alternative :)
-            max_deg = 0
-            next_digit = 1
-            while x // next_digit > 0:
-                max_deg += 1
-                next_digit *= base
+        def binsearch_njitted(a, x, lo=0, hi=None):
+            """Return the index where to insert item x in list a, assuming a is sorted in ascending order.
 
-            if x == 0:
-                return np.zeros(digits_n, dtype='i4')
+            The return value i is such that all e in a[:i] have e < x, and all e in
+            a[i:] have e >= x.
+            """
 
-            digits = np.zeros(digits_n, dtype='i4')
-            m = next_digit // base
-            for digit in range(max_deg):
-                d = x // m
-                digits[-digit-1] = d
-                x = x - d * m
-            return digits
+            if hi is None:
+                hi = len(a)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if a[mid] < x:
+                    lo = mid + 1
+                else:
+                    hi = mid
+            return lo
 
         @njit
-        def calc_opt_strategy_score_fixed_cost(max_curr_cost, options):
-            # calculates best strategy and it's cost by a given max_curr_cost budget limitation
+        def calc_opt_strategy_score_singlecore_optimized():
+            """
+            calculates the best risk management strategy, cost and risk for all ranges of budget plans that are considered
+            according to the data, the solution is implemented in a brute force fashion;
+            All calculations run on a single core, but optimized with numba, actually much faster than a multiprocessing
+            version on a small number of cores (less than 20).
+
+            :return: for each considered budget plan:
+                                                    optimal risk amount,
+                                                    optimal cost of the solution,
+                                                    the best strategy
+            """
             inf = 2147483647
-            opt_strategy_score = inf
-            opt_strategy_cost = inf
-            # brute force: going through all possible strategies as simple as possible
-            # (can be optimized, but for our purposes time limits are satisfied)
-            # ndindex and other similar solutions for permutations doesn't with numba with prange for some reason, soo....
+            optimal_risks_ = np.full_like(max_costs, inf)
+            optimal_costs_ = np.full_like(max_costs, inf)
+            best_strategy = np.full((max_costs.shape[0], n_risks_sources), fill_value=-1)
+            options = n_approaches ** n_risks_sources  # all possible strategies
             for risk_strategy_base10 in range(options):
-                risk_strategy = base_repr(risk_strategy_base10, n_approaches, n_risks_sources)
-                cost, curr_risk = calc_cost_and_risk(risk_strategy,
-                                                     max_curr_cost,
-                                                     opt_strategy_score)
-                if curr_risk < opt_strategy_score and cost <= max_curr_cost:
-                    opt_strategy_score = curr_risk
-                    opt_strategy_cost = cost
-            return opt_strategy_score, opt_strategy_cost
+                # brute force loop through all of the options only once for each: updating relevant cost best value everytime
+                risk_strategy = base_repr(risk_strategy_base10, n_approaches, n_risks_sources)  # this "hides" all the nested loops in a single line
+                cost, curr_risk = calc_cost_and_risk(risk_strategy)
+                ind = binsearch_njitted(max_costs, cost)
+                # update best value for the fixed cost if risk is the best for it
+                # invariant that cost1 > cost2 => risk1 > risk2 is satisfied by default because of how the loop goes
+                if curr_risk < optimal_risks_[ind]:
+                    optimal_risks_[ind] = curr_risk
+                    optimal_costs_[ind] = cost
+                    best_strategy[ind] = risk_strategy
 
-        @njit(parallel=True)
-        def calc_opt_strategy_score(n_risk_sources=n_risks_sources, n_approaches=n_approaches):
-            # calculates the best risk management strategy for all ranges of budget possible according to the data
-            # returns two arrays with equal sizes - the smallest risk possible with the given budget[i]
-            # solution is implemented in a brute force fashion
-            optimal_risks_ = np.empty_like(max_costs)
-            optimal_costs_ = np.empty_like(max_costs)
-            options = n_approaches**n_risk_sources  # all possible strategies
-            for index in prange(max_costs.shape[0]):
-                # this loop can be eliminated: all the optimal strategies should be found in a one look
-                # but then either no parallel computing or no numba prange feature can be used sadly
-                optimal_risks_[index], optimal_costs_[index] = calc_opt_strategy_score_fixed_cost(max_costs[index], options)
-                # we can say it equals max_curr_cost, but we should have a fair calculation :)
-            return optimal_risks_, optimal_costs_
+            # fill all the missing untouched risk management plans (some budgets can be still not visited)
+            fill_index = 0
+            best_risk = inf
+            best_cost = inf
+            best_strat = np.empty(n_risks_sources, dtype=numba.types.int64)
+            while fill_index < max_costs.shape[0]:
+                if optimal_risks_[fill_index] < best_risk:
+                    best_risk = optimal_risks_[fill_index]
+                    best_cost = optimal_costs_[fill_index]
+                    best_strat = best_strategy[fill_index]
+                else:
+                    best_strategy[fill_index] = best_strat[:]
+                    optimal_risks_[fill_index] = best_risk
+                    optimal_costs_[fill_index] = best_cost
+                fill_index += 1
+            return optimal_risks_, optimal_costs_, best_strategy
 
-        @njit
-        def calc_opt_rs(max_curr_cost=45.0, n_risk_sources=n_risks_sources, n_approaches=n_approaches):
-            # calculates optimal strategy for a given max_curr_cost
-            # no parallel execution due to conflict with the shared variables best_rs, opt_strategy
+        def calc_opt_strategy_score_parallel(threads=cores_number()):
+            """
+            Parallel version of the calc_opt_strategy_score_singlecore_optimized (without numba optimization)
+
+            :return: for each considered budget plan:
+                                                    optimal risk amount,
+                                                    optimal cost of the solution,
+                                                    the best strategy
+            """
             inf = 2147483647
-            opt_strategy_score = inf
-            best_rs = np.arange(n_risks_sources)
-            options = n_approaches ** n_risk_sources  # all possible strategies
-            for risk_strategy_base10 in range(options):
-                risk_strategy = base_repr(risk_strategy_base10, n_approaches)
+            local_max_costs = max_costs[:]
+            # the solution in this case is similar to a single core, but the task (all the combinations) is divided
+            # into parts, 1 part for each worker, after that all their solutions are combined
+            # init:
+            thread_optimal_risks = np.full(shape=(threads + 1, local_max_costs.shape[0]), fill_value=inf)
+            thread_optimal_costs = np.full(shape=(threads + 1, local_max_costs.shape[0]), fill_value=inf)
+            thread_best_strategy = np.full(shape=(threads + 1, local_max_costs.shape[0], n_risks_sources), fill_value=-1)
 
-                cost, curr_risk = calc_cost_and_risk(risk_strategy,
-                                                     max_curr_cost,
-                                                     opt_strategy_score)
-                if curr_risk < opt_strategy_score and cost <= max_curr_cost:
-                    opt_strategy_score = curr_risk
-                    best_rs[:] = risk_strategy[:]
+            global_optimal_risks, global_optimal_costs = np.full(local_max_costs.shape[0], inf), \
+                                                         np.full(local_max_costs.shape[0], inf)
+            global_best_strategy = np.full((local_max_costs.shape[0], n_risks_sources), -1)
 
-            return best_rs
+            all_options = n_approaches ** n_risks_sources
+            if all_options <= threads:  # then it will be much faster on a single core with numba
+                return calc_opt_strategy_score_singlecore_optimized()
+            # splitting the task into batches for workers:
+            risk_strategy_batches = np.empty(threads + 1, dtype=int)
+            increment = all_options//threads
+            risk_strategy_batches[:-1] = (np.arange(threads) + 1) * increment
+            risk_strategy_batches[-1] = all_options + 1
 
-        def global_run():
-            # finding optimal data, strategies and optimal point
-            # but not optimal strategy, because it violates rule of shared memory for multiprocessing with numba
-            optimal_risks, optimal_costs = calc_opt_strategy_score()
-            BaseClass.optimal_risks = optimal_risks
-            BaseClass.optimal_costs = optimal_costs
-            BaseClass.max_costs = max_costs
-            optimal_point = BaseClass.save_optimal_strategy_curve()
-            return optimal_point, max_costs[optimal_point], optimal_risks[optimal_point]
+            # parallel execution
+            with Pool() as pool:
+                arguments = zip(np.repeat(local_max_costs[None, ...], threads, axis=0),
+                                risk_strategy_batches[:-1],
+                                np.full(threads, local_max_costs.shape[0]), np.full(threads, increment),
+                                np.full(threads, n_risks_sources), np.full(threads, n_approaches),
+                                np.repeat(costs[None, ...], threads, axis=0),
+                                np.repeat(risks[None, ...], threads, axis=0))  # preparing input data for each worker
 
-        _, optimal_budget, optimal_risk = global_run()
-        # print(f"the best risk management strategy with cost(risk)/cost(rubbles for risk management) ~ 2 costs \
-        #             {optimal_cost__}, leads to average risk = {optimal_risk} and can be achieved by the strategy: "
-        #       f"{calc_opt_rs(max_curr_cost=optimal_cost__)}")
+                result = pool.starmap(search_for_batch_best_solution, arguments)
+
+            for element in range(len(result)):
+                thread_optimal_risks[element], thread_optimal_costs[element], thread_best_strategy[element] = result[element]
+
+            # calculate the last batch that is not full
+            if not all_options % threads:
+                for last_risk_strategy_base10 in range(risk_strategy_batches[-2] + 1, risk_strategy_batches[-1]):
+                    risk_strategy = base_repr(last_risk_strategy_base10, n_approaches, n_risks_sources)
+                    cost, curr_risk = calc_cost_and_risk(risk_strategy)
+                    ind = binsearch(local_max_costs, cost)
+                    if curr_risk < thread_optimal_risks[-1, ind]:
+                        thread_optimal_risks[-1, ind] = curr_risk
+                        thread_optimal_costs[-1, ind] = cost
+                        thread_best_strategy[-1, ind] = risk_strategy
+
+            # combine the result of all of the workers into one optimal and best solution for all budget plans
+            for cost_index in range(local_max_costs.shape[0]):
+                for thread in range(threads + 1):
+                    if thread_optimal_risks[thread, cost_index] < global_optimal_risks[cost_index]:
+                        global_optimal_risks[cost_index] = thread_optimal_risks[thread, cost_index]
+                        global_optimal_costs[cost_index] = thread_optimal_costs[thread, cost_index]
+                        global_best_strategy[cost_index] = thread_best_strategy[thread, cost_index]
+
+            return global_optimal_risks, global_optimal_costs, global_best_strategy
+
+        # you can choose parallel or a single_core optimized version of the algorithm
+        if multiprocessing_mode:
+            optimal_risks, optimal_costs, optimal_strats = calc_opt_strategy_score_parallel()
+        else:
+            optimal_risks, optimal_costs, optimal_strats = calc_opt_strategy_score_singlecore_optimized()
+        # update the class data
+        BaseClass.optimal_risks = optimal_risks
+        BaseClass.optimal_costs = optimal_costs
+        BaseClass.max_costs = max_costs
+        BaseClass.optimal_strategies = optimal_strats
         BaseClass.is_relevant = True
-        # return best_strategy = calc_opt_rs(max_curr_cost=optimal_budget)
+        optimal_point = BaseClass.save_optimal_strategy_curve()
+        return optimal_point, max_costs[optimal_point], optimal_risks[optimal_point]
 
     @classmethod
     def edit_risk_table_element(cls, new_value, x, y):
@@ -638,16 +795,22 @@ class BaseClass(metaclass=Singleton):
             cls.reasons_table.n_risks_sources -= 1
         cls.is_relevant = False
 
+    @classmethod
+    def change_number_of_steps_for_calc(cls, new_number_of_steps):
+        cls.steps_for_calc = new_number_of_steps
+
+    @classmethod
+    def get_optimal_strategy(cls):
+        return cls.optimal_strategies
+
 
 if __name__ == "__main__":
     # 12 risks
-    # 5 levels
-
-    BaseClass.optimize_for_all_costs()
-    # BaseClass.remove_risk_source()
-    # BaseClass.remove_risk_source(3)
-    # BaseClass.remove_approach()
-    # BaseClass.remove_approach(2)
-    # BaseClass.add_risk_source()
-    # BaseClass.add_approach()
+    # 5 levels (by default)
+    # you can add more of them using BaseClass methods
+    BaseClass.optimize_for_all_costs(multiprocessing_mode=False)
+    BaseClass.save_optimal_strategy_curve()
+    # print('best strategies: \n', BaseClass.optimal_strategies, '\n\n\n')
+    # print('best risks with those: \n', BaseClass.optimal_risks, '\n\n\n')
+    # print('and the costs of strats: \n', BaseClass.optimal_costs, '\n\n\n')
     print('finished')
