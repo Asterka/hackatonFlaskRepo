@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MessageService } from 'primeng/api';
-import { CellEditor } from 'primeng/table';
+import { CellEditor, Table } from 'primeng/table';
 import { TableDataService } from '../table-data.service';
 
 @Component({
@@ -11,6 +11,7 @@ import { TableDataService } from '../table-data.service';
 export class TablePageComponent implements OnInit {
 
   constructor(private messageService: MessageService, public tableDataSerivce: TableDataService) { }
+  @ViewChild('dt') table: any;
 
   ngOnInit() {
     this.tableDataSerivce.requestTableData().then((data: any)=>{
@@ -20,6 +21,11 @@ export class TablePageComponent implements OnInit {
     })
   }
 
+  applyFilterGlobal($event:any, stringVal: any){
+      console.log($event.target.value)
+      this.table.filterGlobal(($event.target as HTMLInputElement).value, 'contains');
+  }
+  
   onRowEditInit() {
 
   }
