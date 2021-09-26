@@ -1,13 +1,30 @@
+# import warnings
+import json
 import numpy as np
 from matplotlib import pyplot as plt
 from numba import prange, njit
-import json
+
 
 # it is better to install numba with conda (for llvm support)
 
+# dicts for pretty table instead of raw numbers at front
+dmg_lvls_decoding = {'0': 'Несущественные последствия',
+                     '1': 'Умеренные последствия',
+                     '2': 'Существенные последствия',
+                     '3': 'Катастрофические последствия'}
+
+probability_decoding = {'0': 'Нулевая',
+                        '1': 'Низкая',
+                        '2': 'Средняя',
+                        '3': 'Высокая'}
+
+# dicts for pretty table to raw numbers conversion from json
+dmg_lvls_inversed = {discription: number for number, discription in dmg_lvls_decoding.items()}
+probability_inversed = {discription: number for number, discription in probability_decoding.items()}
+
 
 class Singleton(type):
-    # singleton for BaseClass
+    # singleton for a BaseClass
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -17,7 +34,7 @@ class Singleton(type):
 
 
 class NumpyEncoder(json.JSONEncoder):
-    # used to encode 2d and 3d numpy array to json format
+    # used to encode 2d and 3d numpy array (tables) to json format for front
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -36,36 +53,68 @@ class Table:
         self.n_risks_sources = n_risks_sources
         self.n_approaches = n_approaches
         if not default_risks_names:
-            self.risks_names = ['Выход из строя серверного оборудования в офисе Заказчика', 'Потеря доступа к серверу',
-                                'Проблема с ПО', 'Выход из строя ПК', 'Потеря данных при передаче с буровой площадки в офис Заказчика',
-                                'Потеря данных при передаче внутри буровой площадки', 'Не согласованность каналов передачи данных между подрядчиками',
-                                'Отказ/выход из строя оборудования (автоматики/датчиков)', 'Обрыв ЛЭП', 'Проблема с каналом связи', 'Неисправность датчиков/др. оборудования', 'Некорректная обработка ПО']
+            self.risks_names = np.array(['Выход из строя серверного оборудования в офисе Заказчика',
+                                         'Потеря доступа к серверу',
+                                         'Проблема с ПО', 'Выход из строя ПК',
+                                         'Потеря данных при передаче с буровой площадки в офис Заказчика',
+                                         'Потеря данных при передаче внутри буровой площадки',
+                                         'Не согласованность каналов передачи данных между подрядчиками',
+                                         'Отказ/выход из строя оборудования (автоматики/датчиков)',
+                                         'Обрыв ЛЭП',
+                                         'Проблема с каналом связи',
+                                         'Неисправность датчиков/др. оборудования',
+                                         'Некорректная обработка ПО'], dtype=str)
         else:
             self.risks_names = default_risks_names
 
-    def update_value(self, new_val, x, y):
+    def update_value(self, new_val, x, y, z=None):
+        """
+        Updates value of the table element and updates is_relative flag
+        to show that old calculations are incorrect now
+        :param new_val: new value
+        :param x: x coordinate (row index)
+        :param y: y coordinate (column index)
+        :param z: z coordinate for risks table
+        :return:
+        """
         # updates value of the table element and updates is_relative flag
         # to show that old calculations are incorrect now
-        self.data[x, y] = new_val
+        if not z:
+            self.data[x, y] = new_val
+        elif self.data.shape == 3:
+            self.data[x, y, z] = new_val
+        else:
+            Warning('update_value error: z is not None while given 2d table')
         BaseClass.is_relevant = False
 
     def add_row(self):
-        # adds a row to the table
+        """
+        Adds new last row to the table
+        :return:
+        """
         if len(self.data.shape) == 2:
             self.data = np.append(self.data, np.zeros((1, self.data.shape[1]), dtype=self.data.dtype), axis=0)
         else:
             self.data = np.append(self.data, np.zeros((1, self.data.shape[1], self.data.shape[2]), dtype=self.data.dtype), axis=0)
 
     def add_column(self):
-        # adds column to the table
+        """
+        Adds new last column to the table
+        :return:
+        """
         if len(self.data.shape) == 2:
             self.data = np.append(self.data, np.zeros((self.data.shape[0], 1), dtype=self.data.dtype), axis=1)
         else:
             self.data = np.append(self.data, np.zeros((self.data.shape[0], 1, self.data.shape[2]), dtype=self.data.dtype), axis=1)
 
     def delete_row(self, row_n=-1):
+        """
+        Deletes row from the table
+        :param row_n: index of a row to delete, if last then can be column_n = -1
+        :return:
+        """
         if row_n >= self.data.shape[0]:
-            # error
+            # warnings.warn(f'error (out of bounds) while trying to delete a row {row_n} out of {self.data.shape[0]}')
             pass
         elif row_n != -1:
             self.data = self.data[[i for i in range(self.data.shape[0]) if i != row_n]]
@@ -73,8 +122,13 @@ class Table:
             self.data = self.data[:-1]
 
     def delete_column(self, column_n=-1):
+        """
+        Deletes column from the table
+        :param column_n: index of a column to delete, if last then can be column_n = -1
+        :return:
+        """
         if column_n >= self.data.shape[1]:
-            # error
+            # warnings.warn(f'error (out of bounds) while trying to delete a column {column_n} out of {self.data.shape[1]}')
             pass
         elif column_n != -1:
             self.data = self.data[:, [i for i in range(self.data.shape[1]) if i != column_n]]
@@ -82,14 +136,63 @@ class Table:
             self.data = self.data[:, :-1]
 
     def convert_numpy_to_json(self):
-        # converts a table to json format
-        return json.dumps(self.data, cls=NumpyEncoder)
+        """
+        Converts a table to json format
+        :return: json dump data
+        """
+        to_dump = self.data[:]
+        row_with_approach_names = np.arange(self.n_approaches + 1).astype(np.object)
+        row_with_approach_names[0] = 'Названия рисков \\ Уровни проработки'
 
-    def read_from_json(self, json_data):
-        # reconstruct a table from json format to numpy array
+        if len(self.data.shape) == 3:
+            # in case of risks table
+            to_dump = self.data.astype(int).astype(np.object)[:]
+            damage_lvl, probability_lvl = to_dump[:, :, 0], to_dump[:, :, 1]
+            for lvl in dmg_lvls_decoding.keys():
+                damage_lvl[np.where(damage_lvl == int(lvl))] = dmg_lvls_decoding[lvl]
+
+            for prob in probability_decoding.keys():
+                probability_lvl[np.where(probability_lvl == int(prob))] = probability_decoding[prob]
+            to_dump = np.empty(self.data.shape[:2], dtype=np.object)
+            for i in range(to_dump.shape[0]):
+                for j in range(to_dump.shape[1]):
+                    to_dump[i, j] = damage_lvl[i, j] + ', ' + probability_lvl[i, j]
+        column_wth_risks_names = self.risks_names[:, None]
+        to_dump = np.append(column_wth_risks_names, np.transpose(to_dump, axes=(1, 0)), axis=1)
+
+        to_dump = np.append(row_with_approach_names[None, :], to_dump, axis=0)
+        return json.dumps(to_dump.astype(str), cls=NumpyEncoder)
+
+    def read_from_json(self, json_data, shape='2d', dtype='float'):
+        """
+        reconstruct a table from json format to numpy array
+        :param json_data: data
+        :param shape: 2d or 3d (3d for risks table)
+        :param dtype: float always except reasoning table
+        :return: actually returning value can be ignored.
+                 Returns np array of reconstructed data.
+        """
+        #
         json_load = json.loads(json_data)
-        self.data = np.asarray(json_load)
-        return self.data
+        to_data = np.asarray(json_load)[1:, 1:]
+        if shape != '2d':
+            new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
+            for i in range(to_data.shape[0]):
+                for j in range(to_data.shape[1]):
+
+                    pair = to_data[i, j].split(', ')
+
+                    new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
+                    new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
+            to_data = new_to_data.transpose((1, 0, 2))
+        else:
+            to_data = to_data.transpose((1, 0))
+        if dtype == 'float':
+            self.data = to_data.astype(float)  # comment this line for testing this function
+            return to_data.astype(float)
+        else:
+            self.data = to_data  # comment this line for testing this function
+            return to_data
 
 
 class RiskTable(Table):
@@ -211,6 +314,10 @@ class CostsTable(Table):
     """
 
     def __init__(self, given_init_costs=None):
+        """
+        If given_init_costs are not given assigns all the values from our default table
+        :param given_init_costs:
+        """
         super(CostsTable, self).__init__()
         if not given_init_costs:
             self.data = np.empty((self.n_approaches, self.n_risks_sources))
@@ -224,7 +331,16 @@ class CostsTable(Table):
 
 
 class Reasoning(Table):
+    """
+    Reasons for each of the problems list located according to the necessary complexity level of solution and
+    corresponding risk
+    """
     def __init__(self, default=True, init_reasoning=None):
+        """
+        if default use our values, else either init with the given init_reasoning or use an empty table
+        :param default:
+        :param init_reasoning:
+        """
         super(Reasoning, self).__init__()
         if default and not init_reasoning:
             self.data = np.empty((self.n_approaches, self.n_risks_sources), dtype=str)
@@ -333,7 +449,6 @@ class BaseClass(metaclass=Singleton):
         risks = BaseClass.risks_table.data[:]
         n_risks_sources = BaseClass.costs_table.n_risks_sources
         n_approaches = BaseClass.costs_table.n_approaches
-        # print(f'Number of steps: {n_steps}')
 
         @njit
         def calc_cost_and_risk(risk_strategy, max_curr_cost=2147483647., opt_strategy_score=2147483647.):
@@ -462,6 +577,10 @@ class BaseClass(metaclass=Singleton):
 
     @classmethod
     def add_approach(cls):
+        """
+        Adds a new approach of managing the risks (to all of the tables)
+        :return:
+        """
         cls.risks_table.add_row()
         cls.costs_table.add_row()
         cls.reasons_table.add_row()
@@ -472,6 +591,10 @@ class BaseClass(metaclass=Singleton):
 
     @classmethod
     def add_risk_source(cls):
+        """
+        Adds a new risk into consideration (to all of the tables)
+        :return:
+        """
         cls.risks_table.add_column()
         cls.costs_table.add_column()
         cls.reasons_table.add_column()
@@ -485,22 +608,34 @@ class BaseClass(metaclass=Singleton):
 
     @classmethod
     def remove_approach(cls, i=-1):
+        """
+        Removes an approach at index i from all of the tables, if i=-1 then removes the last one
+        :param i:
+        :return:
+        """
         cls.risks_table.delete_row(i)
         cls.costs_table.delete_row(i)
         cls.reasons_table.delete_row(i)
-        cls.risks_table.n_approaches -= 1
-        cls.costs_table.n_approaches -= 1
-        cls.reasons_table.n_approaches -= 1
+        if cls.risks_table.n_approaches > 0:
+            cls.risks_table.n_approaches -= 1
+            cls.costs_table.n_approaches -= 1
+            cls.reasons_table.n_approaches -= 1
         cls.is_relevant = False
 
     @classmethod
     def remove_risk_source(cls, i=-1):
+        """
+        Removes a risk source at index i from all of the tables, if i=1 then removes the last one
+        :param i:
+        :return:
+        """
         cls.risks_table.delete_column(i)
         cls.costs_table.delete_column(i)
         cls.reasons_table.delete_column(i)
-        cls.risks_table.n_risks_sources -= 1
-        cls.costs_table.n_risks_sources -= 1
-        cls.reasons_table.n_risks_sources -= 1
+        if cls.risks_table.n_risks_sources > 0:
+            cls.risks_table.n_risks_sources -= 1
+            cls.costs_table.n_risks_sources -= 1
+            cls.reasons_table.n_risks_sources -= 1
         cls.is_relevant = False
 
 
