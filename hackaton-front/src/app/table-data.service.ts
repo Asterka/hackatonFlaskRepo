@@ -12,4 +12,11 @@ export class TableDataService {
     /*This value is hardcoded for dev purposes*/
     return this.http.get('http://localhost:5000/table1').toPromise();
   }
+
+  setTableData(data: any){
+    this.data = data;
+  }
+  getTableData(){
+    return this.data;
+  }
 }

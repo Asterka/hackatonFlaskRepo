@@ -10,11 +10,13 @@ import { TableDataService } from '../table-data.service';
 })
 export class TablePageComponent implements OnInit {
 
-  constructor(private messageService: MessageService, private tableDataSerivce: TableDataService) { }
+  constructor(private messageService: MessageService, public tableDataSerivce: TableDataService) { }
 
   ngOnInit() {
-    this.tableDataSerivce.requestTableData().then((data)=>{
-      this.messageService.add({'severity':'info', detail:'data loaded'});
+    this.tableDataSerivce.requestTableData().then((data: any)=>{
+      this.messageService.add({'severity':'info', detail:'Данные обновлены'});
+      console.log(JSON.parse(data))
+      this.tableDataSerivce.setTableData(JSON.parse(data));
     })
   }
 
