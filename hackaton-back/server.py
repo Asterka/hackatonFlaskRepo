@@ -5,6 +5,7 @@ from threading import Thread
 import time
 from calculations import *
 from flask_cors import CORS
+from flask import request
 
 
 app = Flask(__name__)
@@ -58,7 +59,8 @@ def test_disconnect():
 
 @app.route('/table1', methods=['POST'])
 def sample():
-    return 'Был получен POST-запрос.'
+    print(request.json)
+    return 'gotcha'
 
 
 @app.route('/table1', methods=['GET'])
