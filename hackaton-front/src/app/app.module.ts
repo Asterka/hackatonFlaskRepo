@@ -19,6 +19,8 @@ import { Router, RouterModule } from '@angular/router';
 import { TableDataService } from './table-data.service';
 import { MessageService } from 'primeng/api';
 
+import {PanelModule} from 'primeng/panel';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -41,6 +43,7 @@ import { MessageService } from 'primeng/api';
     RouterModule,
     AppRoutingModule,
     ToastModule,
+    PanelModule
   ],
   providers: [TableDataService, MessageService],
   bootstrap: [AppComponent]

@@ -5,21 +5,28 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root'
 })
 export class TableDataService {
-  private data: any = [];
-  private headers: any = [];
+  private data: any = {};
+  private headers: any = {};
+  private modified: any = {};
   constructor( private http: HttpClient) { }
 
-  requestTableData(){
+  requestTableData(type: any){
     /*This value is hardcoded for dev purposes*/
-    return this.http.get('http://localhost:5000/table1').toPromise();
+    return this.http.get(`http://localhost:5000/table${type}`).toPromise();
   }
 
-  setTableData(data: any, headers: any){
-    this.data = data;
-    this.headers = headers;
+  setTableData(id: any, data: any, headers: any){
+    this.data[id] = data;
+    this.headers[id] = headers;
     console.log(this.headers)
   }
-  getTableData(){
-    return {data: this.data, headers: this.headers};
+  setModified(id: any){
+    this.modified[id] = true;
+  }
+  getModified(){
+    return this.modified.keys.length();
+  }
+  getTableData(id: any){
+    return {data: this.data[id], headers: this.headers[id]};
   }
 }

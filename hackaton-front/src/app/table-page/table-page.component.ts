@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { CellEditor, Table } from 'primeng/table';
 import { TableDataService } from '../table-data.service';
@@ -14,12 +14,17 @@ export class TablePageComponent implements OnInit {
   constructor(private messageService: MessageService, public tableDataSerivce: TableDataService) { }
   @ViewChild('dt') table: any;
   public editing = false;
+  @Input()
+  public type: string = '';
+
   ngOnInit() {
-    this.tableDataSerivce.requestTableData().then((data: any)=>{
+    this.tableDataSerivce.requestTableData(this.type).then((data: any)=>{
       this.messageService.add({'severity':'info', detail:'Данные обновлены'});
       data = <Array<any>>JSON.parse(data);
       let headers = data[0];
-      this.tableDataSerivce.setTableData(data.slice(1), headers);
+      
+      /* Save the parsed data under its id, split headers */
+      this.tableDataSerivce.setTableData(Number.parseInt(this.type), data.slice(1), headers);
     })
   }
 
@@ -33,7 +38,6 @@ export class TablePageComponent implements OnInit {
   }
 
   onValueUpdate(event:any, row: any, id:any) {
-    console.log('here');
     row[id] = event.target.value
     console.log(row[id])
   }
