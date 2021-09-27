@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class TableDataService {
   private data: any = [];
+  private headers: any = [];
   constructor( private http: HttpClient) { }
 
   requestTableData(){
@@ -13,10 +14,12 @@ export class TableDataService {
     return this.http.get('http://localhost:5000/table1').toPromise();
   }
 
-  setTableData(data: any){
+  setTableData(data: any, headers: any){
     this.data = data;
+    this.headers = headers;
+    console.log(this.headers)
   }
   getTableData(){
-    return this.data;
+    return {data: this.data, headers: this.headers};
   }
 }

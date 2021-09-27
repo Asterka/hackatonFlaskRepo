@@ -1,7 +1,7 @@
 <div class="card">
   <p-table #dt
-    [value]="tableDataSerivce.getTableData()"
-    [globalFilterFields]="['reasoning']"
+    [value]="tableDataSerivce.getTableData().data"
+    [globalFilterFields]="['0','1', '2', '3', '4', '5']"
   >
     <ng-template pTemplate="caption">
       <div class="p-d-flex">
@@ -15,6 +15,13 @@
           />
         </span>
       </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+      <tr>
+        <th *ngFor="let item of tableDataSerivce.getTableData().headers">
+        {{ item }}
+        </th>
+      </tr>
     </ng-template>
     <ng-template pTemplate="body" let-row>
       <tr>

@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { CellEditor, Table } from 'primeng/table';
 import { TableDataService } from '../table-data.service';
+import {TableModule} from 'primeng/table';
 
 @Component({
   selector: 'app-table-page',
@@ -16,13 +17,14 @@ export class TablePageComponent implements OnInit {
   ngOnInit() {
     this.tableDataSerivce.requestTableData().then((data: any)=>{
       this.messageService.add({'severity':'info', detail:'Данные обновлены'});
-      console.log(JSON.parse(data))
-      this.tableDataSerivce.setTableData(JSON.parse(data));
+      data = <Array<any>>JSON.parse(data);
+      let headers = data[0];
+      this.tableDataSerivce.setTableData(data.slice(1), headers);
     })
   }
 
   applyFilterGlobal($event:any, stringVal: any){
-      console.log($event.target.value)
+      console.log($event.target.value, this.table)
       this.table.filterGlobal(($event.target as HTMLInputElement).value, 'contains');
   }
   
