@@ -2,7 +2,7 @@ import { Input, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { TableModule} from 'primeng/table';
+import { CellEditor, TableModule} from 'primeng/table';
 import { Toast, ToastModule } from "primeng/toast";
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -22,7 +22,7 @@ import { MessageService } from 'primeng/api';
 @NgModule({
   declarations: [
     AppComponent,
-    TablePageComponent
+    TablePageComponent,
   ],
   imports: [
     BrowserModule,

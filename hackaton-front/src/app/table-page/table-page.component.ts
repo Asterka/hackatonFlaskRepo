@@ -13,7 +13,7 @@ export class TablePageComponent implements OnInit {
 
   constructor(private messageService: MessageService, public tableDataSerivce: TableDataService) { }
   @ViewChild('dt') table: any;
-
+  public editing = false;
   ngOnInit() {
     this.tableDataSerivce.requestTableData().then((data: any)=>{
       this.messageService.add({'severity':'info', detail:'Данные обновлены'});
@@ -29,11 +29,13 @@ export class TablePageComponent implements OnInit {
   }
   
   onRowEditInit() {
-
+    console.log('Focus');
   }
 
-  onRowEditSave() {
-
+  onValueUpdate(event:any, row: any, id:any) {
+    console.log('here');
+    row[id] = event.target.value
+    console.log(row[id])
   }
 
   onRowEditCancel() {

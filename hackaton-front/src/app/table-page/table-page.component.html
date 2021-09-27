@@ -2,6 +2,8 @@
   <p-table #dt
     [value]="tableDataSerivce.getTableData().data"
     [globalFilterFields]="['0','1', '2', '3', '4', '5']"
+    [columns]="tableDataSerivce.getTableData().headers"
+    class="card"
   >
     <ng-template pTemplate="caption">
       <div class="p-d-flex">
@@ -25,8 +27,15 @@
     </ng-template>
     <ng-template pTemplate="body" let-row>
       <tr>
-        <td pEditableColumn *ngFor="let item of row">
-            {{ item | json }}
+        <td pEditableColumn *ngFor="let item of row; let i = index">
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [ngModel]="row[i]" (change)="onValueUpdate($event, row, i)" (keydown.enter)="onValueUpdate($event, row, i)"/>
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{row[i]}}
+            </ng-template>
+          </p-cellEditor>
         </td>
       </tr>
     </ng-template>
