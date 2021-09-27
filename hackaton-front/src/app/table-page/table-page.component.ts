@@ -19,6 +19,7 @@ export class TablePageComponent implements OnInit {
 
   ngOnInit() {
     this.tableDataSerivce.requestTableData(this.type).then((data: any)=>{
+      this.tableDataSerivce.setShouldUpdate(this.type, false);
       this.messageService.add({'severity':'info', detail:'Данные обновлены'});
       data = <Array<any>>JSON.parse(data);
       let headers = data[0];

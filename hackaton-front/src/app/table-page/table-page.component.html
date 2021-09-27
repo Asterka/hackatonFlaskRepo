@@ -1,8 +1,8 @@
 <div class="card">
   <p-table #dt
-    [value]="tableDataSerivce.getTableData(type).data"
+    [value]="tableDataSerivce.getTableData(type)!.data"
     [globalFilterFields]="['0','1', '2', '3', '4', '5']"
-    [columns]="tableDataSerivce.getTableData(type).headers"
+    [columns]="tableDataSerivce.getTableData(type)!.headers"
     class="card"
   >
     <ng-template pTemplate="caption">
@@ -21,7 +21,7 @@
     </ng-template>
     <ng-template pTemplate="header">
       <tr>
-        <th *ngFor="let item of tableDataSerivce.getTableData(type).headers">
+        <th *ngFor="let item of tableDataSerivce.getTableData(type)!.headers">
         {{ item }}
         </th>
       </tr>
