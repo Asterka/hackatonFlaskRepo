@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, emit, send
 from threading import Thread
 import time
 from calculations import *
+from flask_cors import CORS
 
 
 app = Flask(__name__)
@@ -11,7 +12,7 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
 thread = None
 clients = 0
-
+CORS(app)
 
 def ini_socket():
     global clients, thread
@@ -55,21 +56,25 @@ def test_disconnect():
     clients -= 1
     print('Client disconnected')
 
+@app.route('/table1', methods=['POST'])
+def sample():
+    return 'Был получен POST-запрос.'
 
-@app.route('/table1')
+
+@app.route('/table1', methods=['GET'])
 def send_table_with_risks():
     response = jsonify(BaseClass.risks_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
-@app.route('/table2')
+@app.route('/table2', methods=['GET'])
 def send_table2_with_risks():
     response = jsonify(BaseClass.costs_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
 
-@app.route('/table3')
+@app.route('/table3', methods=['GET'])
 def send_table3_with_risks():
     response = jsonify(BaseClass.reasons_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")

@@ -29,7 +29,7 @@ export class TablePageComponent implements OnInit {
   }
 
   applyFilterGlobal($event:any, stringVal: any){
-      console.log($event.target.value, this.table)
+      //console.log($event.target.value, this.table)
       this.table.filterGlobal(($event.target as HTMLInputElement).value, 'contains');
   }
   
@@ -38,8 +38,8 @@ export class TablePageComponent implements OnInit {
   }
 
   onValueUpdate(event:any, row: any, id:any) {
-    row[id] = event.target.value
-    console.log(row[id])
+    row[id] = event.target.value;
+    this.tableDataSerivce.setModified(this.type);
   }
 
   onRowEditCancel() {

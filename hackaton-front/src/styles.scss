@@ -6,6 +6,9 @@ body{
 
 input{
     &:focus{
-        box-shadow: yellow;
     }
+}
+
+.d-none{
+    display: none;
 }
