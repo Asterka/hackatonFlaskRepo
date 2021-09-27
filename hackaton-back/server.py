@@ -60,7 +60,8 @@ def test_disconnect():
 @app.route('/table1', methods=['POST'])
 def sample():
     print(request.json)
-    return 'gotcha'
+    return jsonify(data), status_code
+
 
 
 @app.route('/table1', methods=['GET'])
