@@ -6,15 +6,16 @@
     class="card"
   >
     <ng-template pTemplate="caption">
-      <div class="p-d-flex">
-        <span class="p-input-icon-left p-ml-auto">
-          <i class="pi pi-search"></i>
+      <div class="flex justify-content-center">
+        <span class="flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5">
           <input
+            style="width: calc(100% - 32px);"
             pInputText
             type="text"
             (input)="applyFilterGlobal($event, 'contains')"
-            placeholder="Search keyword"
+            placeholder="Введите поисковое значение"
           />
+          <button class="ml-3" pButton icon="pi pi-search" (click)="applyFilterGlobal($event, 'contains')"></button>
         </span>
       </div>
     </ng-template>
