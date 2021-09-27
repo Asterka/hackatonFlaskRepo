@@ -175,25 +175,28 @@ class Table:
         """
         #
         json_load = json.loads(json_data)
-        to_data = np.asarray(json_load)[1:, 1:]
-        if shape != '2d':
-            new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
-            for i in range(to_data.shape[0]):
-                for j in range(to_data.shape[1]):
+        try:
+            to_data = np.asarray(json_load)[:, 1:]  # not [1:, 1:] because first row is skipped transmitted by the front part
+            if shape != '2d':
+                new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
+                for i in range(to_data.shape[0]):
+                    for j in range(to_data.shape[1]):
 
-                    pair = to_data[i, j].split(', ')
+                        pair = to_data[i, j].split(', ')
 
-                    new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
-                    new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
-            to_data = new_to_data.transpose((1, 0, 2))
-        else:
-            to_data = to_data.transpose((1, 0))
-        if dtype == 'float':
-            self.data = to_data.astype(float)  # comment this line for testing this function
-            return to_data.astype(float)
-        else:
-            self.data = to_data  # comment this line for testing this function
-            return to_data
+                        new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
+                        new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
+                to_data = new_to_data.transpose((1, 0, 2))
+            else:
+                to_data = to_data.transpose((1, 0))
+            if dtype == 'float':
+                self.data = to_data.astype(float)  # comment this line for testing this function
+                return to_data.astype(float)
+            else:
+                self.data = to_data  # comment this line for testing this function
+                return to_data
+        except:
+            return None  # if user input to json was incorrect
 
 
 class RiskTable(Table):
