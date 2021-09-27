@@ -391,7 +391,13 @@ class BaseClass(metaclass=Singleton):
     # (the best set of levels of approaches for each risk)
     is_relevant = None  # flag to identify if calculations are relevant (changes when the table is edited)
     risk_cost = 2.  # coefficient of the expensiveness of risk damage cost compared to risk management investments
-    steps_for_calc = 100  # number of different budget plans (evenly spaced from the cheapest to the most expensive)
+    steps_for_calc = -1  # number of different budget plans (evenly spaced from the cheapest to the most expensive)
+    # if steps_for_calc = -1 then the best resolution is used for the plot (all possible budget plans from the given
+    # table: from min budget to max budget with the step = min difference between costs of approaches across all levels)
+
+    # the solution has a time complexity of ~
+    # n_approaches ^ n_risks * log(steps_for_calc) / n_cores (for parallel execution)
+
     use_numba = True  # if True then numba optimization will be used for multiprocessing
 
     @classmethod
@@ -974,7 +980,7 @@ if __name__ == "__main__":
     BaseClass.save_optimal_strategy_curve()
 
     # print('best strategies: \n', BaseClass.optimal_strategies, '\n\n\n')
-    print('best risks with those: \n', BaseClass.optimal_risks, '\n\n\n')
+    print('best risks with those: \n', BaseClass.optimal_risks, '\n\n\n')  # to big array to print (3655 elements) by default
     print('and the costs of strats: \n', BaseClass.optimal_costs, '\n\n\n')
     print(f'optimal for cost 50: \n{BaseClass.get_optimal_strategy_with_risk_and_cost_given_budget(50)}\n\n\n')
     print('finished')
