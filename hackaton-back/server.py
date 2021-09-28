@@ -74,6 +74,7 @@ def update_risks_table():
 
 @app.route('/table2', methods=['POST'])
 def update_costs_table():
+    print(json.loads(request.data))
     new_json = request.data
     if BaseClass.costs_table.read_from_json(new_json, table_name='costs'):
         return 'All good', 200
@@ -82,6 +83,7 @@ def update_costs_table():
 
 @app.route('/table3', methods=['POST'])
 def update_reasoning_table():
+    print(json.loads(request.data))
     new_json = request.data
     if BaseClass.risks_table.read_from_json(new_json, table_name='reasoning'):
         return 'All good', 200
