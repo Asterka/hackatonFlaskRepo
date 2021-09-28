@@ -7,7 +7,7 @@
   >
     <ng-template pTemplate="caption">
       <div class="flex justify-content-center">
-        <span class="flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5">
+        <span [ngClass]="type!='3'?'d-none flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5':'flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5'">
           <input
             style="width: calc(100% - 32px);"
             pInputText
