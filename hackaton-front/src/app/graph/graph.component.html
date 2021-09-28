@@ -1,1 +1,4 @@
-<img [ngClass]="tableDataService.plotActive?'':'d-none'" src="http://3.22.224.152:3004/optimal_strategy_curve.png">
+<div class="w-100">
+  <p-table [value]='tableDataService.strategyTable'></p-table>
+  <img [ngClass]="tableDataService.plotActive?'':'d-none'" src="http://3.22.224.152:3004/optimal_strategy_curve.png">
+</div>

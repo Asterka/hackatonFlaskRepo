@@ -11,6 +11,9 @@ export class GraphComponent implements OnInit {
   constructor(public tableDataService: TableDataService) { }
 
   ngOnInit(): void {
+    this.tableDataService.requestStrategyTable().then((data:any)=>{
+      this.tableDataService.strategyTable = data;
+    })
   }
 
 }

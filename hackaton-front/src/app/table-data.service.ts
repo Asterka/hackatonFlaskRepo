@@ -12,12 +12,17 @@ export class TableDataService {
   private headers: any = {};
   private modified: any = {};
   private shouldUpdate: any = {};
+  public strategyTable: any = [];
   public plotActive: boolean = false;
   constructor(private http: HttpClient, private messageService: MessageService, public dialogService: DialogService) {}
 
   requestTableData(type: any) {
     /*This value is hardcoded for dev purposes*/
     return this.http.get(`http://3.22.224.152:12345/table${type}`).toPromise();
+  }
+
+  requestStrategyTable() {
+    return this.http.get(`http://3.22.224.152:12345/strategy_table`).toPromise();
   }
 
   setTableData(id: any, data: any, headers: any) {
