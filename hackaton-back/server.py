@@ -4,6 +4,9 @@ from flask_socketio import SocketIO, emit, send
 from threading import Thread
 import time
 from calculations import *
+from flask_cors import CORS
+from flask import request
+from calculations import *
 
 
 app = Flask(__name__)
@@ -11,6 +14,7 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
 thread = None
 clients = 0
+CORS(app)
 
 
 def ini_socket():
@@ -55,22 +59,45 @@ def test_disconnect():
     clients -= 1
     print('Client disconnected')
 
+@app.route('/table1', methods=['POST'])
+def update_risks_table():
+    new_json = request.data
+    if BaseClass.risks_table.read_from_json(new_json, table_name='risks'):
+        return 'All good', 200
+    else:
+        return 'Error', 500
 
-@app.route('/table1')
+@app.route('/table2', methods=['POST'])
+def update_costs_table():
+    new_json = request.data
+    if BaseClass.costs_table.read_from_json(new_json, table_name='risks'):
+        return 'All good', 200
+    else:
+        return 'Error', 500
+
+@app.route('/table3', methods=['POST'])
+def update_reasoning_table():
+    new_json = request.data
+    if BaseClass.risks_table.read_from_json(new_json, table_name='reasoning'):
+        return 'All good', 200
+    else:
+        return 'Error', 500
+
+@app.route('/table1', methods=['GET'])
 def send_table_with_risks():
     response = jsonify(BaseClass.risks_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
-@app.route('/table2')
-def send_table_with_risks():
+@app.route('/table2', methods=['GET'])
+def send_table2_with_risks():
     response = jsonify(BaseClass.costs_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
 
-@app.route('/table3')
-def send_table_with_risks():
+@app.route('/table3', methods=['GET'])
+def send_table3_with_risks():
     response = jsonify(BaseClass.reasons_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
