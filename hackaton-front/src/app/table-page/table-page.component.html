@@ -7,7 +7,7 @@
   >
     <ng-template pTemplate="caption">
       <div class="flex justify-content-center">
-        <span class="flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5">
+        <span [ngClass]="type!='3'?'d-none flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5':'flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5'">
           <input
             style="width: calc(100% - 32px);"
             pInputText
@@ -34,7 +34,10 @@
               <input pInputText type="text" [ngModel]="row[i]" (change)="onValueUpdate($event, row, i)" (keydown.enter)="onValueUpdate($event, row, i)"/>
             </ng-template>
             <ng-template pTemplate="output">
-              {{row[i]}}
+              <span class="flex justify-content-between align-items-center relative">
+                <span class="col-8">{{row[i]}}</span>
+                <button [ngClass]="type==='3'?'':'d-none'" pButton class="absolute p-button-outlined p-button-rounded" style="right:0; width: 1.5em;height: 1.5rem" icon="pi pi-info" (click)="openDialog($event.stopPropagation())"></button>
+              </span>
             </ng-template>
           </p-cellEditor>
         </td>
