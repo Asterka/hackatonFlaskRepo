@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { MessageService } from 'primeng/api';
-import { CellEditor } from 'primeng/table';
+import { CellEditor, Table } from 'primeng/table';
 import { TableDataService } from '../table-data.service';
+import {TableModule} from 'primeng/table';
 
 @Component({
   selector: 'app-table-page',
@@ -10,20 +11,36 @@ import { TableDataService } from '../table-data.service';
 })
 export class TablePageComponent implements OnInit {
 
-  constructor(private messageService: MessageService, private tableDataSerivce: TableDataService) { }
+  constructor(private messageService: MessageService, public tableDataSerivce: TableDataService) { }
+  @ViewChild('dt') table: any;
+  public editing = false;
+  @Input()
+  public type: string = '';
 
   ngOnInit() {
-    this.tableDataSerivce.requestTableData().then((data)=>{
-      this.messageService.add({'severity':'info', detail:'data loaded'});
+    this.tableDataSerivce.requestTableData(this.type).then((data: any)=>{
+      this.tableDataSerivce.setShouldUpdate(this.type, false);
+      this.messageService.add({'severity':'info', detail:'Данные обновлены'});
+      data = <Array<any>>JSON.parse(data);
+      let headers = data[0];
+      
+      /* Save the parsed data under its id, split headers */
+      this.tableDataSerivce.setTableData(Number.parseInt(this.type), data.slice(1), headers);
     })
   }
 
+  applyFilterGlobal($event:any, stringVal: any){
+      //console.log($event.target.value, this.table)
+      this.table.filterGlobal(($event.target as HTMLInputElement).value, 'contains');
+  }
+  
   onRowEditInit() {
-
+    console.log('Focus');
   }
 
-  onRowEditSave() {
-
+  onValueUpdate(event:any, row: any, id:any) {
+    row[id] = event.target.value;
+    this.tableDataSerivce.setModified(this.type);
   }
 
   onRowEditCancel() {

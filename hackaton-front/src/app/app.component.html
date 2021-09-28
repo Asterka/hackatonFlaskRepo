@@ -1,2 +1,15 @@
 <p-toast></p-toast>
-<router-outlet></router-outlet>
+<div class="absolute">
+  <div header="Таблица рисков" class="bg-primary mt-7">
+    <app-table-page type="1"></app-table-page>
+  </div>
+  <div header="Стоимость проработки рисков по уровням" class="bg-primary mt-7">
+    <app-table-page type="2"></app-table-page>
+  </div>
+  <div header="Источники рисков" class="bg-primary mt-7">
+    <app-table-page type="3"></app-table-page>
+  </div>
+  <span [class]="isModified()===true?'':'d-none'" class="fixed" style="top:calc(100% - 50px);right:calc(50% - 80px);z-index: 10000;">
+    <button pButton style="box-shadow: 0px 0px 5px 5px #bbb;" icon="pi pi-refresh" label="данные изменены" (click)='update()'></button>
+  </span>
+</div>

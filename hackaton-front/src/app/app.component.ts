@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TableDataService } from './table-data.service';
 
 @Component({
   selector: 'app-root',
@@ -6,5 +7,18 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
+  constructor(private tableDataService: TableDataService){
+  }
+
+  update(){
+    let modified: any = this.tableDataService.getModified()
+    Object.keys(modified).forEach((id:any) => {
+      console.log(id);
+      this.tableDataService.sendData(id);
+    });
+  }
+  isModified(){
+    return this.tableDataService.getIsModified();
+  }
   title = 'hackaton-front';
 }

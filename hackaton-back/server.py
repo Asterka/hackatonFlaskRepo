@@ -5,7 +5,7 @@ from threading import Thread
 import time
 from calculations import *
 from flask_cors import CORS
-from flask import request
+from flask import requestE
 from calculations import *
 
 
@@ -15,7 +15,6 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 thread = None
 clients = 0
 CORS(app)
-
 
 def ini_socket():
     global clients, thread
@@ -60,6 +59,7 @@ def test_disconnect():
     print('Client disconnected')
 
 @app.route('/table1', methods=['POST'])
+
 def update_risks_table():
     new_json = request.data
     if BaseClass.risks_table.read_from_json(new_json, table_name='risks'):

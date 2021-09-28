@@ -2,7 +2,7 @@ import { Input, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { TableModule} from 'primeng/table';
+import { CellEditor, TableModule} from 'primeng/table';
 import { Toast, ToastModule } from "primeng/toast";
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -19,10 +19,12 @@ import { Router, RouterModule } from '@angular/router';
 import { TableDataService } from './table-data.service';
 import { MessageService } from 'primeng/api';
 
+import {PanelModule} from 'primeng/panel';
+
 @NgModule({
   declarations: [
     AppComponent,
-    TablePageComponent
+    TablePageComponent,
   ],
   imports: [
     BrowserModule,
@@ -41,6 +43,7 @@ import { MessageService } from 'primeng/api';
     RouterModule,
     AppRoutingModule,
     ToastModule,
+    PanelModule
   ],
   providers: [TableDataService, MessageService],
   bootstrap: [AppComponent]

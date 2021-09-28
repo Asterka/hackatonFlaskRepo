@@ -1,3 +1,44 @@
 <div class="card">
-    
+  <p-table #dt
+    [value]="tableDataSerivce.getTableData(type)!.data"
+    [globalFilterFields]="['0','1', '2', '3', '4', '5']"
+    [columns]="tableDataSerivce.getTableData(type)!.headers"
+    class="card"
+  >
+    <ng-template pTemplate="caption">
+      <div class="flex justify-content-center">
+        <span class="flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5">
+          <input
+            style="width: calc(100% - 32px);"
+            pInputText
+            type="text"
+            (input)="applyFilterGlobal($event, 'contains')"
+            placeholder="Введите поисковое значение"
+          />
+          <button class="ml-3" pButton icon="pi pi-search" (click)="applyFilterGlobal($event, 'contains')"></button>
+        </span>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+      <tr>
+        <th *ngFor="let item of tableDataSerivce.getTableData(type)!.headers">
+        {{ item }}
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td pEditableColumn *ngFor="let item of row; let i = index">
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [ngModel]="row[i]" (change)="onValueUpdate($event, row, i)" (keydown.enter)="onValueUpdate($event, row, i)"/>
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{row[i]}}
+            </ng-template>
+          </p-cellEditor>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 </div>
