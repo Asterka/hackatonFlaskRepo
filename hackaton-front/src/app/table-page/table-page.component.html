@@ -6,6 +6,15 @@
     class="card"
   >
     <ng-template pTemplate="caption">
+      <h2 [ngClass]="type==='1'?'':'d-none'">
+        Вероятность и критичность рисков по уровням проработки
+      </h2>
+      <h2 [ngClass]="type==='2'?'':'d-none'">
+        Стоимость рисков по уровням проработки
+      </h2>
+      <h2 [ngClass]="type==='3'?'':'d-none'">
+        Возможные причины возникновения рисков
+      </h2>
       <div class="flex justify-content-center">
         <span [ngClass]="type!='3'?'d-none flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5':'flex p-input-icon-left p-ml-auto p-6 pt-3 pb-3 col-5'">
           <input
