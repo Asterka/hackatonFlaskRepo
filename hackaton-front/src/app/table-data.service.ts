@@ -1,6 +1,8 @@
+import { GraphComponent } from './graph/graph.component';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +13,7 @@ export class TableDataService {
   private modified: any = {};
   private shouldUpdate: any = {};
   public plotActive: boolean = false;
-  constructor(private http: HttpClient, private messageService: MessageService) {}
+  constructor(private http: HttpClient, private messageService: MessageService, public dialogService: DialogService) {}
 
   requestTableData(type: any) {
     /*This value is hardcoded for dev purposes*/
@@ -43,6 +45,10 @@ export class TableDataService {
   }
   getPlot(){
     return this.http.get(`http://3.22.224.152:12345/plot`).toPromise().then(()=>{
+      this.dialogService.open(GraphComponent, {
+        header: 'Choose a Car',
+        width: '70%'
+      });
       this.plotActive = true;
     })
   }
