@@ -77,7 +77,7 @@ def update_costs_table():
     print(json.loads(request.data))
     new_json = request.data
     try: 
-        if BaseClass.risks_table.read_from_json(new_json, table_name='costs'):
+        if BaseClass.costs_table.read_from_json(new_json, table_name='costs'):
             return '{"text":"All good"}', 200
         else:
             return '{"text":"Error!!"}', 500
@@ -89,7 +89,7 @@ def update_reasoning_table():
     print(json.loads(request.data))
     new_json = request.data
     try: 
-        if BaseClass.risks_table.read_from_json(new_json, table_name='reasoning'):
+        if BaseClass.reasons_table.read_from_json(new_json, table_name='reasoning'):
             return '{"text":"All good"}', 200
         else:
             return '{"text":"Error!!"}', 500
