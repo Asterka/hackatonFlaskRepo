@@ -11,6 +11,9 @@ max_resolution = 1_000_000  # maximum number of budget plans possibly considered
 # it increases optimization time complexity by O(log(max_resolution)) multiplier and consumes
 # O(max_resolution * n_approaches * number_of_cores) memory
 
+# total solution has a time complexity of O(n_approaches ^ risks_number * log(budget_plans_number) / cores_number),
+# where budget_plans_number <= max_resolution (depends on the costs table data)
+
 # dicts for pretty table instead of raw numbers at front
 dmg_lvls_decoding = {'0': 'Несущественные последствия',
                      '1': 'Умеренные последствия',
@@ -415,7 +418,7 @@ class BaseClass(metaclass=Singleton):
     def save_optimal_strategy_curve(cls):
         """
             Represents minimal risk for each available budget and optimal point for a given risk_cost field of the class
-        :return:  optimal budget that minimizes risk cost and risk management cost
+        :return:
         """
         fig = Figure()
         ax = fig.add_subplot(111)
@@ -425,7 +428,7 @@ class BaseClass(metaclass=Singleton):
             cls.risk_cost * cls.optimal_risks + cls.optimal_costs)  # consider cost of data as twice cost of the solution
         ax.scatter(cls.max_costs[optimal_point], cls.optimal_risks[optimal_point], color='g')
         ax.set_ylim(top=cls.optimal_risks[0] * 1.2, bottom=0)
-        # plt.show()
+
         ax.set_xlabel('Стоимость баз. ед.')
         ax.set_ylabel('Риск в ед. риска')
         ax.title.set_text('Риск при оптимальном наборе решений с ограничением на бюджет')
@@ -865,7 +868,14 @@ class BaseClass(metaclass=Singleton):
     @classmethod
     def get_optimal_strategy_with_risk_and_cost_given_budget(cls, budget_plan):
         strat_index = binsearch(cls.max_costs, budget_plan)
-        return cls.optimal_strategies[strat_index], cls.optimal_risks[strat_index], cls.optimal_costs[strat_index]
+        to_dump = cls.optimal_strategies[strat_index].astype(object)
+        header_column = cls.costs_table.risks_names.astype(object)
+        header_row = np.array(['Названия рисков', 'Оптимальный уровень проработки']).astype(object)
+        return_json_table = np.append(header_row[None, :], to_dump, axis=0)
+        return_json_table = np.append(header_column[:, None], return_json_table, axis=1)
+        return json.dumps(return_json_table.astype(str), cls=NumpyEncoder), \
+               cls.optimal_risks[strat_index], \
+               cls.optimal_costs[strat_index]
 
 
 @njit
