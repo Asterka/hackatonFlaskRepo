@@ -111,4 +111,4 @@ def send_table3_with_risks():
 # This is the function that will create the Server in the ip host and port 5000
 if __name__ == "__main__":
     print("starting webservice")
-    app.run(debug=True)
+    app.run(debug=True, port="5000", host="0.0.0.0")
