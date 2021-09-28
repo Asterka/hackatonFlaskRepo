@@ -173,9 +173,10 @@ class Table:
                  Returns np array of reconstructed data.
         """
         #
+        
         json_load = json.loads(json_data)
         try:
-            to_data = np.asarray(json_load)[1:, :]  # not [1:, 1:] because first row is skipped transmitted by the front part
+            to_data = np.asarray(json_load)[:, 1:]  # not [1:, 1:] because first row is skipped transmitted by the front part
             # and first row at front actually is a column
             if table_name == 'risks':
                 new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
@@ -183,7 +184,7 @@ class Table:
                     for j in range(to_data.shape[1]):
 
                         pair = to_data[i, j].split(', ')
-
+                        print(pair, 'asd')
                         new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
                         new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
                 to_data = new_to_data.transpose((1, 0, 2))
