@@ -104,8 +104,14 @@ def send_table_with_risks():
     return response
 
 @app.route('/table2', methods=['GET'])
-def send_table2_with_risks():
+def send_table_with_costs():
     response = jsonify(BaseClass.costs_table.convert_numpy_to_json())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+
+@app.route('/table3', methods=['GET'])
+def send_table_with_reasons():
+    response = jsonify(BaseClass.reasons_table.convert_numpy_to_json())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
@@ -115,13 +121,6 @@ def plot_png():
         BaseClass.optimize_for_all_costs(multiprocessing_mode=True)
     BaseClass.save_optimal_strategy_curve()
     return {'text':"success"}, 200
-
-@app.route('/table3', methods=['GET'])
-def send_table3_with_risks():
-    response = jsonify(BaseClass.reasons_table.convert_numpy_to_json())
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
-
 
 # This is the function that will create the Server in the ip host and port 5000
 if __name__ == "__main__":
