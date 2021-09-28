@@ -57,6 +57,7 @@ export class TableDataService {
         });
       })
       .catch((err) => {
+        this.messageService.add({'severity':'error', detail:'Произошла ошибка при обработке запроса'});
         console.log(err);
       });
   }
