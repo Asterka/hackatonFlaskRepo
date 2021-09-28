@@ -4,8 +4,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 from numba import njit, prange, types, config  # it is better to install numba with conda (for llvm support)
 from multiprocessing import Pool, cpu_count as cores_number
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
-max_resolution = 100_000  # maximum number of budget plans considered
+max_resolution = 1_000_000  # maximum number of budget plans possibly considered, can be increased if needed
+# it increases optimization time complexity by O(log(max_resolution)) multiplier and consumes
+# O(max_resolution * n_approaches * number_of_cores) memory
 
 # dicts for pretty table instead of raw numbers at front
 dmg_lvls_decoding = {'0': 'Несущественные последствия',
@@ -413,17 +417,19 @@ class BaseClass(metaclass=Singleton):
             Represents minimal risk for each available budget and optimal point for a given risk_cost field of the class
         :return:  optimal budget that minimizes risk cost and risk management cost
         """
-        plt.plot(cls.max_costs, cls.optimal_risks)
+        fig = Figure()
+        ax = fig.add_subplot(111)
+        ax.plot(cls.max_costs, cls.optimal_risks, c='orange')
 
         optimal_point = np.argmin(
             cls.risk_cost * cls.optimal_risks + cls.optimal_costs)  # consider cost of data as twice cost of the solution
-        plt.scatter(cls.max_costs[optimal_point], cls.optimal_risks[optimal_point], color='g')
-        plt.gca().set_ylim(top=100, bottom=0)
+        ax.scatter(cls.max_costs[optimal_point], cls.optimal_risks[optimal_point], color='g')
+        ax.set_ylim(top=cls.optimal_risks[0] * 1.2, bottom=0)
         # plt.show()
-        plt.xlabel('Стоимость баз. ед.')
-        plt.ylabel('Риск в ед. риска')
-        plt.savefig('optimal_strategy_curve.png')
-        return optimal_point
+        ax.set_xlabel('Стоимость баз. ед.')
+        ax.set_ylabel('Риск в ед. риска')
+        # fig.savefig('optimal_strategy_curve.png')
+        return fig
 
     @classmethod
     def optimize_for_all_costs(cls, costs_list=None, n_steps=None, multiprocessing_mode=True):
