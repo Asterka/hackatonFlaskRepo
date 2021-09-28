@@ -164,20 +164,20 @@ class Table:
         to_dump = np.append(row_with_approach_names[None, :], to_dump, axis=0)
         return json.dumps(to_dump.astype(str), cls=NumpyEncoder)
 
-    def read_from_json(self, json_data, shape='2d', dtype='float'):
+    def read_from_json(self, json_data, table_name):
         """
         reconstruct a table from json format to numpy array
         :param json_data: data
-        :param shape: 2d or 3d (3d for risks table)
-        :param dtype: float always except reasoning table
+        :param table_name: 3 options: risks, costs, reasoning (depends on a table type)
         :return: actually returning value can be ignored.
                  Returns np array of reconstructed data.
         """
         #
         json_load = json.loads(json_data)
         try:
-            to_data = np.asarray(json_load)[:, 1:]  # not [1:, 1:] because first row is skipped transmitted by the front part
-            if shape != '2d':
+            to_data = np.asarray(json_load)[1:, :]  # not [1:, 1:] because first row is skipped transmitted by the front part
+            # and first row at front actually is a column
+            if table_name == 'risks':
                 new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
                 for i in range(to_data.shape[0]):
                     for j in range(to_data.shape[1]):
@@ -187,14 +187,17 @@ class Table:
                         new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
                         new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
                 to_data = new_to_data.transpose((1, 0, 2))
-            else:
-                to_data = to_data.transpose((1, 0))
-            if dtype == 'float':
                 self.data = to_data.astype(float)  # comment this line for testing this function
                 return to_data.astype(float)
-            else:
+            elif table_name == 'costs':
+                to_data = to_data.transpose((1, 0))
+                self.data = to_data.astype(float)  # comment this line for testing this function
+                return to_data.astype(float)
+            elif table_name == 'reasoning':
                 self.data = to_data  # comment this line for testing this function
                 return to_data
+            else:
+                return None
         except:
             return None  # if user input to json was incorrect
 
