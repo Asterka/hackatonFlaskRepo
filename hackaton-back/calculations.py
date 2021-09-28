@@ -142,7 +142,7 @@ class Table:
         :return: json dump data
         """
         to_dump = self.data[:]
-        row_with_approach_names = np.arange(self.n_approaches + 1).astype(np.object)
+        row_with_approach_names = np.arange(self.n_approaches + 1).astype(str).astype(object)
         row_with_approach_names[0] = 'Названия рисков \\ Уровни проработки'
 
         if len(self.data.shape) == 3:
@@ -159,14 +159,14 @@ class Table:
                 for j in range(to_dump.shape[1]):
                     to_dump[i, j] = damage_lvl[i, j] + ', ' + probability_lvl[i, j]
         column_wth_risks_names = self.risks_names[:, None]
-        to_dump = np.append(column_wth_risks_names, np.transpose(to_dump, axes=(1, 0)), axis=1)
+        to_dump = np.append(column_wth_risks_names, np.transpose(to_dump, axes=(1, 0)), axis=1)  # adds header column
 
-        to_dump = np.append(row_with_approach_names[None, :], to_dump, axis=0)
+        to_dump = np.append(row_with_approach_names[None, :], to_dump, axis=0)  # adds header row
         return json.dumps(to_dump.astype(str), cls=NumpyEncoder)
 
     def read_from_json(self, json_data, table_name):
         """
-        reconstruct a table from json format to numpy array
+        reconstruct a table from json format and turn it to numpy array
         :param json_data: data
         :param table_name: 3 options: risks, costs, reasoning (depends on a table type)
         :return: actually returning value can be ignored.
@@ -175,8 +175,8 @@ class Table:
         #
         json_load = json.loads(json_data)
         try:
-            to_data = np.asarray(json_load)[1:, :]  # not [1:, 1:] because first row is skipped transmitted by the front part
-            # and first row at front actually is a column
+            to_data = np.asarray(json_load)[:, 1:]
+            # not [1:, 1:] because first row is already skipped by the front part
             if table_name == 'risks':
                 new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
                 for i in range(to_data.shape[0]):
@@ -187,14 +187,15 @@ class Table:
                         new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
                         new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
                 to_data = new_to_data.transpose((1, 0, 2))
-                self.data = to_data.astype(float)  # comment this line for testing this function
+                # self.data = to_data.astype(float)  # comment this line for testing this function
                 return to_data.astype(float)
             elif table_name == 'costs':
                 to_data = to_data.transpose((1, 0))
-                self.data = to_data.astype(float)  # comment this line for testing this function
+                # self.data = to_data.astype(float)  # comment this line for testing this function
                 return to_data.astype(float)
             elif table_name == 'reasoning':
-                self.data = to_data  # comment this line for testing this function
+                to_data = to_data.transpose((1, 0))
+                # self.data = to_data  # comment this line for testing this function
                 return to_data
             else:
                 return None
@@ -350,7 +351,7 @@ class Reasoning(Table):
         """
         super(Reasoning, self).__init__()
         if default and not init_reasoning:
-            self.data = np.empty((self.n_approaches, self.n_risks_sources), dtype=str)
+            self.data = np.empty((self.n_approaches, self.n_risks_sources), dtype=object)
 
             self.data[0] = ["-", "-", "-", "-",
                             "-", "-", "-", "-",
