@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, Response
 from flask_restful import Resource, Api, marshal_with
 from flask_socketio import SocketIO, emit, send
 from threading import Thread
 import time
+import io
 from calculations import *
 from flask_cors import CORS
 from flask import request
@@ -64,7 +65,7 @@ def test_disconnect():
 def update_risks_table():
     print(json.loads(request.data))
     new_json = request.data
-    try: 
+    try:
         if BaseClass.risks_table.read_from_json(new_json, table_name='risks'):
             return '{"text":"All good"}', 200
         else:
@@ -76,7 +77,7 @@ def update_risks_table():
 def update_costs_table():
     print(json.loads(request.data))
     new_json = request.data
-    try: 
+    try:
         if BaseClass.costs_table.read_from_json(new_json, table_name='costs'):
             return '{"text":"All good"}', 200
         else:
@@ -88,7 +89,7 @@ def update_costs_table():
 def update_reasoning_table():
     print(json.loads(request.data))
     new_json = request.data
-    try: 
+    try:
         if BaseClass.reasons_table.read_from_json(new_json, table_name='reasoning'):
             return '{"text":"All good"}', 200
         else:
@@ -108,6 +109,13 @@ def send_table2_with_risks():
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
+@app.route('/plot.png')
+def plot_png():
+    BaseClass.optimize_for_all_costs(multiprocessing_mode=True)
+    fig = BaseClass.save_optimal_strategy_curve()
+    output = io.BytesIO()
+    FigureCanvas(fig).print_png(output)
+    return Response(output.getvalue(), mimetype='image/png')
 
 @app.route('/table3', methods=['GET'])
 def send_table3_with_risks():
