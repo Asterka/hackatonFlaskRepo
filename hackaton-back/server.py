@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from flask import Flask, jsonify, render_template
 from flask_restful import Resource, Api, marshal_with
 from flask_socketio import SocketIO, emit, send
@@ -5,7 +7,7 @@ from threading import Thread
 import time
 from calculations import *
 from flask_cors import CORS
-from flask import requestE
+from flask import request
 from calculations import *
 
 
@@ -59,12 +61,15 @@ def test_disconnect():
     print('Client disconnected')
 
 @app.route('/table1', methods=['POST'])
-
 def update_risks_table():
+    print(json.loads(request.data))
     new_json = request.data
-    if BaseClass.risks_table.read_from_json(new_json, table_name='risks'):
-        return 'All good', 200
-    else:
+    try: 
+        if BaseClass.risks_table.read_from_json(new_json, table_name='risks'):
+            return 'All good', 200
+        else:
+            return 'Error', 500
+    except:
         return 'Error', 500
 
 @app.route('/table2', methods=['POST'])
@@ -106,4 +111,4 @@ def send_table3_with_risks():
 # This is the function that will create the Server in the ip host and port 5000
 if __name__ == "__main__":
     print("starting webservice")
-    app.run()
+    app.run(debug=True)

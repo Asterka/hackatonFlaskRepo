@@ -4,7 +4,6 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { CellEditor, TableModule} from 'primeng/table';
 import { Toast, ToastModule } from "primeng/toast";
-import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TablePageComponent } from './table-page/table-page.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -41,7 +40,6 @@ import {PanelModule} from 'primeng/panel';
     HttpClientModule,
     FormsModule,
     RouterModule,
-    AppRoutingModule,
     ToastModule,
     PanelModule
   ],
