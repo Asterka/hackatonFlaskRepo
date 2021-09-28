@@ -1,11 +1,11 @@
 # import warnings
 import json
 import numpy as np
-from matplotlib import pyplot as plt
 from numba import njit, prange, types, config  # it is better to install numba with conda (for llvm support)
 from multiprocessing import Pool, cpu_count as cores_number
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+import os
+
 
 max_resolution = 1_000_000  # maximum number of budget plans possibly considered, can be increased if needed
 # it increases optimization time complexity by O(log(max_resolution)) multiplier and consumes
@@ -428,8 +428,9 @@ class BaseClass(metaclass=Singleton):
         # plt.show()
         ax.set_xlabel('Стоимость баз. ед.')
         ax.set_ylabel('Риск в ед. риска')
-        # fig.savefig('optimal_strategy_curve.png')
-        return fig
+        ax.title.set_text('Риск при оптимальном наборе решений с ограничением на бюджет')
+        fig.savefig(os.path.join(os.path.curdir, '..', 'hackaton-front', 'dist', 'hackaton-front', 'optimal_strategy_curve.png'))
+        return  # fig
 
     @classmethod
     def optimize_for_all_costs(cls, costs_list=None, n_steps=None, multiprocessing_mode=True):

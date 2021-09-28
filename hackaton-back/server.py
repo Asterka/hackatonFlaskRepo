@@ -111,11 +111,11 @@ def send_table2_with_risks():
 
 @app.route('/plot.png')
 def plot_png():
-    BaseClass.optimize_for_all_costs(multiprocessing_mode=True)
-    fig = BaseClass.save_optimal_strategy_curve()
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
+    if not BaseClass.is_relevant:
+        BaseClass.optimize_for_all_costs(multiprocessing_mode=True)
+    BaseClass.save_optimal_strategy_curve()
+    ...
+    return "write here some code"
 
 @app.route('/table3', methods=['GET'])
 def send_table3_with_risks():
