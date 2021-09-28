@@ -20,11 +20,13 @@ import { TableDataService } from './table-data.service';
 import { MessageService } from 'primeng/api';
 
 import {PanelModule} from 'primeng/panel';
+import { GraphComponent } from './graph/graph.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     TablePageComponent,
+    GraphComponent,
   ],
   imports: [
     BrowserModule,
