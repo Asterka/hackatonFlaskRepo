@@ -1,0 +1,22 @@
+{
+  "name": "hackatonflaskrepo",
+  "version": "1.0.0",
+  "description": "demo: https://drive.google.com/file/d/1RggO07khOXKN-KP9l0NwCgv5FefpHEdx/view?usp=sharing",
+  "main": "liveserver.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Asterka/hackatonFlaskRepo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Asterka/hackatonFlaskRepo/issues"
+  },
+  "homepage": "https://github.com/Asterka/hackatonFlaskRepo#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
