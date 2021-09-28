@@ -173,7 +173,6 @@ class Table:
                  Returns np array of reconstructed data.
         """
         #
-        
         json_load = json.loads(json_data)
         try:
             to_data = np.asarray(json_load)[:, 1:]
@@ -184,20 +183,20 @@ class Table:
                     for j in range(to_data.shape[1]):
 
                         pair = to_data[i, j].split(', ')
-                        print(pair, 'asd')
+
                         new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
                         new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
                 to_data = new_to_data.transpose((1, 0, 2))
                 self.data = to_data.astype(float)  # comment this line for testing this function
-                return to_data.astype(float)
+                return True
             elif table_name == 'costs':
                 to_data = to_data.transpose((1, 0))
                 self.data = to_data.astype(float)  # comment this line for testing this function
-                return to_data.astype(float)
+                return True
             elif table_name == 'reasoning':
                 to_data = to_data.transpose((1, 0))
                 self.data = to_data  # comment this line for testing this function
-                return to_data
+                return True
             else:
                 return None
         except:
@@ -990,5 +989,5 @@ if __name__ == "__main__":
     # print('best strategies: \n', BaseClass.optimal_strategies, '\n\n\n')
     print('best risks with those: \n', BaseClass.optimal_risks, '\n\n\n')  # to big array to print (3655 elements) by default
     print('and the costs of strats: \n', BaseClass.optimal_costs, '\n\n\n')
-    print(f'optimal for cost 50: \n{BaseClass.get_optimal_strategy_with_risk_and_cost_given_budget(50)}\n\n\n')
+    print(f'optimal for cost 50: \n{BaseClass.get_optimal_strategy_with_risk_and_cost_given_budget(35)}\n\n\n')
     print('finished')
