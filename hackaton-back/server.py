@@ -70,7 +70,7 @@ def update_risks_table():
         else:
             return '{"text":"Error!!"}', 500
     except:
-        return '{"text":"Error!!"}', 500
+        return '{"text":"I am fallen, I can\'t get up!!"}', 500
 
 @app.route('/table2', methods=['POST'])
 def update_costs_table():
@@ -82,7 +82,7 @@ def update_costs_table():
         else:
             return '{"text":"Error!!"}', 500
     except:
-        return '{"text":"Error!!"}', 500
+        return '{"text":"I am fallen, I can\'t get up!!"}', 500
 
 @app.route('/table3', methods=['POST'])
 def update_reasoning_table():
@@ -94,7 +94,7 @@ def update_reasoning_table():
         else:
             return '{"text":"Error!!"}', 500
     except:
-        return '{"text":"Error!!"}', 500
+        return '{"text":"I am fallen, I can\'t get up!!"}', 500
 
 @app.route('/table1', methods=['GET'])
 def send_table_with_risks():
