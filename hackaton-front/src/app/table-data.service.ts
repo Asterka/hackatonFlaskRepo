@@ -10,6 +10,7 @@ export class TableDataService {
   private headers: any = {};
   private modified: any = {};
   private shouldUpdate: any = {};
+  public plotActive: boolean = false;
   constructor(private http: HttpClient, private messageService: MessageService) {}
 
   requestTableData(type: any) {
@@ -39,6 +40,11 @@ export class TableDataService {
   }
   getShouldUpdate(){
     return this.shouldUpdate;
+  }
+  getPlot(){
+    return this.http.get(`http://3.22.224.152:12345/plot`).toPromise().then(()=>{
+      this.plotActive = true;
+    })
   }
   sendData(id: any) {
     delete this.modified[id];
