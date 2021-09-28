@@ -59,6 +59,7 @@ def test_disconnect():
 
 @app.route('/table1', methods=['POST'])
 def sample():
+    
     return 'All good', 200
 
 
