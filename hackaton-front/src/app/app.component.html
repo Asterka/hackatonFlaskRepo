@@ -6,6 +6,10 @@
   <div header="Стоимость проработки рисков по уровням" class="bg-primary mt-7">
     <app-table-page type="2"></app-table-page>
   </div>
+  <div class="w-100">
+    <button pButton class="p-button-outlined" label="Произвести расчёт" (click)="tableDataService.getPlot()"></button>
+    <img [ngClass]="tableDataService.plotActive?'':'d-none'" src="http://3.22.224.152:3004/">
+  </div>
   <div header="Источники рисков" class="bg-primary mt-7">
     <app-table-page type="3"></app-table-page>
   </div>

@@ -7,7 +7,7 @@ import { TableDataService } from './table-data.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  constructor(private tableDataService: TableDataService){
+  constructor(public tableDataService: TableDataService){
   }
 
   update(){
