@@ -171,37 +171,36 @@ class Table:
         :param json_data: data
         :param table_name: 3 options: risks, costs, reasoning (depends on a table type)
         :return: actually returning value can be ignored.
-                 Returns np array of reconstructed data.
+                 Returns True in case of success, False in case of an unexpected table type and an exception in case of
+                 an error, which will be caught at the server.py part
         """
         #
         json_load = json.loads(json_data)
-        try:
-            to_data = np.asarray(json_load)[:, 1:]
-            # not [1:, 1:] because first row is already skipped by the front part
-            if table_name == 'risks':
-                new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
-                for i in range(to_data.shape[0]):
-                    for j in range(to_data.shape[1]):
 
-                        pair = to_data[i, j].split(', ')
+        to_data = np.asarray(json_load)[:, 1:]
+        # not [1:, 1:] because first row is already skipped by the front part
+        if table_name == 'risks':
+            new_to_data = np.empty((to_data.shape[0], to_data.shape[1], 2), dtype=float)
+            for i in range(to_data.shape[0]):
+                for j in range(to_data.shape[1]):
 
-                        new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
-                        new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
-                to_data = new_to_data.transpose((1, 0, 2))
-                self.data = to_data.astype(float)  # comment this line for testing this function
-                return True
-            elif table_name == 'costs':
-                to_data = to_data.transpose((1, 0))
-                self.data = to_data.astype(float)  # comment this line for testing this function
-                return True
-            elif table_name == 'reasoning':
-                to_data = to_data.transpose((1, 0))
-                self.data = to_data  # comment this line for testing this function
-                return True
-            else:
-                return None
-        except:
-            return None  # if user input to json was incorrect
+                    pair = to_data[i, j].split(', ')
+
+                    new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
+                    new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
+            to_data = new_to_data.transpose((1, 0, 2))
+            self.data = to_data.astype(float)  # comment this line for testing this function
+            return True
+        elif table_name == 'costs':
+            to_data = to_data.transpose((1, 0))
+            self.data = to_data.astype(float)  # comment this line for testing this function
+            return True
+        elif table_name == 'reasoning':
+            to_data = to_data.transpose((1, 0))
+            self.data = to_data  # comment this line for testing this function
+            return True
+        else:
+            return False
 
 
 class RiskTable(Table):
