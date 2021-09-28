@@ -187,15 +187,15 @@ class Table:
                         new_to_data[i, j, 0] = float(dmg_lvls_inversed[pair[0]])
                         new_to_data[i, j, 1] = float(probability_inversed[pair[1]])
                 to_data = new_to_data.transpose((1, 0, 2))
-                # self.data = to_data.astype(float)  # comment this line for testing this function
+                self.data = to_data.astype(float)  # comment this line for testing this function
                 return to_data.astype(float)
             elif table_name == 'costs':
                 to_data = to_data.transpose((1, 0))
-                # self.data = to_data.astype(float)  # comment this line for testing this function
+                self.data = to_data.astype(float)  # comment this line for testing this function
                 return to_data.astype(float)
             elif table_name == 'reasoning':
                 to_data = to_data.transpose((1, 0))
-                # self.data = to_data  # comment this line for testing this function
+                self.data = to_data  # comment this line for testing this function
                 return to_data
             else:
                 return None
