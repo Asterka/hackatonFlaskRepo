@@ -14,7 +14,7 @@ export class TableDataService {
 
   requestTableData(type: any) {
     /*This value is hardcoded for dev purposes*/
-    return this.http.get(`http://localhost:12345/table${type}`).toPromise();
+    return this.http.get(`http://3.22.224.152:12345/table${type}`).toPromise();
   }
 
   setTableData(id: any, data: any, headers: any) {
@@ -43,7 +43,7 @@ export class TableDataService {
   sendData(id: any) {
     delete this.modified[id];
     this.http
-      .post(`http://localhost:12345/table${id}`, JSON.stringify(this.data[id]))
+      .post(`http://3.22.224.152:12345/table${id}`, JSON.stringify(this.data[id]))
       .toPromise()
       .then((res:any) => {
         console.log('here')
