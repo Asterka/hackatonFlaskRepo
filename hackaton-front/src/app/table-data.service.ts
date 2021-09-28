@@ -14,7 +14,7 @@ export class TableDataService {
 
   requestTableData(type: any) {
     /*This value is hardcoded for dev purposes*/
-    return this.http.get(`http://localhost:5000/table${type}`).toPromise();
+    return this.http.get(`http://localhost:12345/table${type}`).toPromise();
   }
 
   setTableData(id: any, data: any, headers: any) {
@@ -43,7 +43,7 @@ export class TableDataService {
   sendData(id: any) {
     delete this.modified[id];
     this.http
-      .post(`http://localhost:5000/table${id}`, JSON.stringify(this.data[id]))
+      .post(`http://localhost:12345/table${id}`, JSON.stringify(this.data[id]))
       .toPromise()
       .then((res:any) => {
         console.log('here')
@@ -51,7 +51,7 @@ export class TableDataService {
           this.messageService.add({'severity':'info', detail:'Данные обновлены'});
           data = <Array<any>>JSON.parse(data);
           let headers = data[0];
-          
+
           /* Save the parsed data under its id, split headers */
           this.setTableData(Number.parseInt(id), data.slice(1), headers);
         });
