@@ -1,3 +1,4 @@
+import { DynamicDialogModule, DialogService } from 'primeng/dynamicdialog';
 import { Input, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
@@ -28,6 +29,7 @@ import {PanelModule} from 'primeng/panel';
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
+    DynamicDialogModule,
     TableModule,
     CalendarModule,
 		SliderModule,
@@ -43,7 +45,7 @@ import {PanelModule} from 'primeng/panel';
     ToastModule,
     PanelModule
   ],
-  providers: [TableDataService, MessageService],
+  providers: [TableDataService, MessageService, DialogService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

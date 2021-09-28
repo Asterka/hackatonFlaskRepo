@@ -34,7 +34,10 @@
               <input pInputText type="text" [ngModel]="row[i]" (change)="onValueUpdate($event, row, i)" (keydown.enter)="onValueUpdate($event, row, i)"/>
             </ng-template>
             <ng-template pTemplate="output">
-              {{row[i]}}
+              <span class="flex justify-content-between align-items-center relative">
+                <span class="col-8">{{row[i]}}</span>
+                <button [ngClass]="type==='3'?'':'d-none'" pButton class="absolute p-button-outlined p-button-rounded" style="right:0; width: 1.5em;height: 1.5rem" icon="pi pi-info" (click)="openDialog($event.stopPropagation())"></button>
+              </span>
             </ng-template>
           </p-cellEditor>
         </td>

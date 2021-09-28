@@ -46,10 +46,11 @@ export class TableDataService {
       .post(`http://3.22.224.152:12345/table${id}`, JSON.stringify(this.data[id]))
       .toPromise()
       .then((res:any) => {
-        console.log('here')
+
         this.requestTableData(id).then((data: any)=>{
           this.messageService.add({'severity':'info', detail:'Данные обновлены'});
           data = <Array<any>>JSON.parse(data);
+
           let headers = data[0];
 
           /* Save the parsed data under its id, split headers */
@@ -57,8 +58,7 @@ export class TableDataService {
         });
       })
       .catch((err) => {
-        this.messageService.add({'severity':'error', detail:'Произошла ошибка при обработке запроса'});
-        console.log(err);
+        this.messageService.add({'severity':'error', detail:'Ошибка обновления данных'});
       });
   }
 }
