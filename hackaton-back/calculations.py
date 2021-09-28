@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from numba import njit, prange, types, config  # it is better to install numba with conda (for llvm support)
 from multiprocessing import Pool, cpu_count as cores_number
 
+max_resolution = 100_000  # maximum number of budget plans considered
 
 # dicts for pretty table instead of raw numbers at front
 dmg_lvls_decoding = {'0': 'Несущественные последствия',
@@ -462,8 +463,9 @@ class BaseClass(metaclass=Singleton):
 
             if cls.steps_for_calc == -1:
                 n_steps = int((max_theoretical_cost - min_theoretical_cost) / min_step) + 1
+                n_steps = min(n_steps, max_resolution)
             else:
-                n_steps = cls.steps_for_calc
+                n_steps = min(cls.steps_for_calc, max_resolution)
             max_costs = np.linspace(min_theoretical_cost, max_theoretical_cost, n_steps)
 
         else:
