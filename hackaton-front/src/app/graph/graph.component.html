@@ -1,5 +1,9 @@
 <div class="w-100">
   <p-table [value]='tableDataService.strategyTable'></p-table>
-  <input pInputText>
+  <span>
+    <input pInputText [(ngModel)]="number">
+    <button class="p-button-outlined" pButton label="Отправить целевой бюджет" (click)="sendTableRequest()"></button>
+  </span>
+
   <img [ngClass]="tableDataService.plotActive?'':'d-none'" src="http://3.22.224.152:3004/optimal_strategy_curve.png">
 </div>

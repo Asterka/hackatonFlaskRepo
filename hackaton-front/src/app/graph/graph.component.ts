@@ -7,11 +7,16 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./graph.component.scss']
 })
 export class GraphComponent implements OnInit {
-
+  private isSent: boolean = false;
+  public number: number = 0;
   constructor(public tableDataService: TableDataService) { }
 
   ngOnInit(): void {
-    this.tableDataService.requestStrategyTable().then((data:any)=>{
+
+  }
+
+  sendTableRequest(){
+    this.tableDataService.requestStrategyTable(this.number).then((data:any)=>{
       this.tableDataService.strategyTable = JSON.parse(data);
       console.log(this.tableDataService.strategyTable)
     })

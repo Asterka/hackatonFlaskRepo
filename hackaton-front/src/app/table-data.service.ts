@@ -21,8 +21,8 @@ export class TableDataService {
     return this.http.get(`http://3.22.224.152:12345/table${type}`).toPromise();
   }
 
-  requestStrategyTable() {
-    return this.http.get(`http://3.22.224.152:12345/table4`).toPromise();
+  requestStrategyTable(number: number) {
+    return this.http.post(`http://3.22.224.152:12345/table4`, {'number':number}).toPromise();
   }
 
   setTableData(id: any, data: any, headers: any) {
