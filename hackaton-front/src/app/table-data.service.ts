@@ -22,7 +22,7 @@ export class TableDataService {
   }
 
   requestStrategyTable() {
-    return this.http.get(`http://3.22.224.152:12345/strategy_table`).toPromise();
+    return this.http.get(`http://3.22.224.152:12345/table4`).toPromise();
   }
 
   setTableData(id: any, data: any, headers: any) {
