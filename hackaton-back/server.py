@@ -66,6 +66,7 @@ def update_risks_table():
     new_json = request.data
     try:
         if BaseClass.risks_table.read_from_json(new_json, table_name='risks'):
+            BaseClass.is_relevant = False
             return '{"text":"All good"}', 200
         else:
             return '{"text":"Error!!"}', 500
@@ -78,6 +79,7 @@ def update_costs_table():
     new_json = request.data
     try:
         if BaseClass.costs_table.read_from_json(new_json, table_name='costs'):
+            BaseClass.is_relevant = False
             return '{"text":"All good"}', 200
         else:
             return '{"text":"Error!!"}', 500
