@@ -50,7 +50,7 @@ export class TablePageComponent implements OnInit {
 
   openDialog(event: any){
     this.dialogService.open(DialogContentComponent, {
-      header: 'Choose a Car',
+      header: 'Данные',
       width: '70%'
   });
   }

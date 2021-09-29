@@ -51,7 +51,7 @@ export class TableDataService {
   getPlot(){
     return this.http.get(`http://3.22.224.152:12345/plot`).toPromise().then(()=>{
       this.dialogService.open(GraphComponent, {
-        header: 'Choose a Car',
+        header: 'Оптимизация риска',
         width: '70%'
       });
       this.plotActive = true;
