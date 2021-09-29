@@ -871,8 +871,8 @@ class BaseClass(metaclass=Singleton):
         to_dump = cls.optimal_strategies[strat_index].astype(object)
         header_column = cls.costs_table.risks_names.astype(object)
         header_row = np.array(['Названия рисков', 'Оптимальный уровень проработки']).astype(object)
-        return_json_table = np.append(header_row[None, :], to_dump, axis=0)
-        return_json_table = np.append(header_column[:, None], return_json_table, axis=1)
+        return_json_table = np.append(header_row[None, :], to_dump[None, :], axis=0)
+        return_json_table = np.append(header_column[:, None], return_json_table, axis=1).T
         return json.dumps(return_json_table.astype(str), cls=NumpyEncoder), \
                cls.optimal_risks[strat_index], \
                cls.optimal_costs[strat_index]
