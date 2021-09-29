@@ -123,7 +123,7 @@ def plot_png():
     BaseClass.save_optimal_strategy_curve()
     return {'text':"success"}, 200
 
-@app.route('/table4', methods=['GET'])
+@app.route('/table4', methods=['POST'])
 def send_table_with_optimization():
     target_budget = float(json.loads(request.data)["number"])
     strategy_table, risk, cost = BaseClass.get_optimal_strategy_with_risk_and_cost_given_budget(target_budget)
