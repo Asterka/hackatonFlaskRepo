@@ -11,7 +11,7 @@ demo: https://drive.google.com/file/d/1RggO07khOXKN-KP9l0NwCgv5FefpHEdx/view?usp
 ## Установка пакетов приложения
 В рабочей сборке использованы npm v 7.23.0, python 3.9.7
 
-Для установки пакетов серверной части - pip3 install -r requirements.txt
+Для установки пакетов серверной части - *pip3 install -r requirements.txt*
 Все необходимые библиотеке описаны в requirements.txt файле папки
 
 
