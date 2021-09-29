@@ -125,14 +125,14 @@ def plot_png():
 
 @app.route('/table4', methods=['GET'])
 def send_table_with_optimization():
-    target_budget = json.loads(request.data)["number"]
+    target_budget = float(json.loads(request.data)["number"])
     strategy_table, risk, cost = BaseClass.get_optimal_strategy_with_risk_and_cost_given_budget(target_budget)
-    all_together = json.loads(strategy_table)
+    all_together = dict()  # json.loads(strategy_table)
+    all_together['table'] = strategy_table
     all_together["risk"] = risk
     all_together["cost"] = cost
     all_together = json.dumps(all_together)
     response = jsonify(all_together)
-    response.headers.add("Access-Control-Allow-Origin", "*")  # <----------- убрать?
     return response
 
 # This is the function that will create the Server in the ip host and port 5000
