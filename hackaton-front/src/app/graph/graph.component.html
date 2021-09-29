@@ -1,5 +1,5 @@
 <div class="w-100">
-  <p-table [value]='tableDataService.strategyTable'></p-table>
+  <p-table *ngIf="tableDataService.strategyTable.table" [value]='tableDataService.strategyTable.table'></p-table>
   <span>
     <input pInputText [(ngModel)]="number">
     <button class="p-button-outlined" pButton label="Отправить целевой бюджет" (click)="sendTableRequest()"></button>
